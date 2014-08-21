@@ -2,11 +2,6 @@
 
 DIRS=$(ls -1 | grep [0-9])
 
-if [ -n ${CI_BUILD_ID} ]; then
-	sed -i "s/@@CI_BUILD_ID@@/${CI_BUILD_ID}/g" 002-tposs-4.3.0-alpha/Dockerfile
-	sed -i "s/@@CI_BUILD_REF@@/${CI_BUILD_REF}/g" 002-tposs-4.3.0-alpha/Dockerfile
-fi
-
 dock() {
 	if [ -e /usr/bin/docker ]; then
 		docker $@
@@ -20,6 +15,6 @@ do
 	echo
 	echo "starting to create image from $x"
 	echo
+	[ -e $x/setup.sh ] && $x/setup.sh
 	dock build -t $x $x
 done
-

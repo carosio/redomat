@@ -15,6 +15,6 @@ do
 	echo
 	echo "starting to create image from $x"
 	echo
-	[ -e $x/setup.sh ] && $x/setup.sh
+	[ -x $x/setup.sh ] && $x/setup.sh
 	dock build -t $x $x
 done

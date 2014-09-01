@@ -2,7 +2,13 @@
 
 set -e
 
-DIRS=$(ls -1 | grep [0-9])
+if [ -n $1 ]; then
+	NUM=$1
+else
+	NUM=9
+fi
+
+DIRS=$(ls -1 | grep [0-${NUM}])
 rc=0
 
 dock() {
@@ -25,7 +31,6 @@ do
 	echo
 	echo "starting to create image from $x"
 	echo
-	[ -x $x/setup.sh ] && $x/setup.sh
 	build-image $x
 done
 

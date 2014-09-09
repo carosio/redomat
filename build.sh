@@ -2,13 +2,9 @@
 
 set -e
 
-if [ -n $1 ]; then
-	NUM=$1
-else
-	NUM=9
-fi
+test -x ./build.sh
+test -d ./001-ubuntu
 
-DIRS=$(ls -1 | grep [0-${NUM}])
 rc=0
 
 dock() {
@@ -26,12 +22,12 @@ function build-image() {
 	fi
 }
 
-for x in $DIRS
+for stage in [0-9][0-9][0-9]-*
 do
 	echo
-	echo "starting to create image from $x"
+	echo "starting to create image from $stage"
 	echo
-	build-image $x
+	build-image $stage
 done
 
 exit $rc

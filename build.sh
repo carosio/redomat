@@ -17,7 +17,7 @@ dock() {
 
 function build-image() {
 	if ! dock build -t $1 $1; then
-		rc=$?
+		rc=1
 		echo "non zero exito status from docker build -t $1 $1: $rc"
 	fi
 }
@@ -28,6 +28,7 @@ do
 	echo "starting to create image from $stage"
 	echo
 	build-image $stage
+	[ $rc -ne 0 ] && exit $rc
 done
 
 exit $rc

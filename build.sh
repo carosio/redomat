@@ -38,7 +38,7 @@ do
 		echo "starting to create image from $stage"
 		echo
 		build-image $stage
-
+		run-image $stage
 		[ $rc -ne 0 ] && exit $rc
 	else
 		echo

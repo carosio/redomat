@@ -22,13 +22,31 @@ function build-image() {
 	fi
 }
 
+function run-image() {
+	if ! dock run --privileged=true --rm -t -i --name=$1 $1 /build/build_tplino-core.sh; then
+		rc=1
+		echo "non zero exito status from docker run --rm -t -i --name=$1 $1: $rc"
+	else
+		dock commit $1 $1;
+	fi
+}
+
 for stage in [0-9][0-9][0-9]-*
 do
-	echo
-	echo "starting to create image from $stage"
-	echo
-	build-image $stage
-	[ $rc -ne 0 ] && exit $rc
+	if [ -e $stage/privileged ]; then
+		echo
+		echo "starting to create image from $stage"
+		echo
+		build-image $stage
+
+		[ $rc -ne 0 ] && exit $rc
+	else
+		echo
+		echo "starting to create image from $stage"
+		echo
+		build-image $stage
+		[ $rc -ne 0 ] && exit $rc
+	fi
 done
 
 exit $rc

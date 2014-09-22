@@ -23,7 +23,7 @@ function build-image() {
 }
 
 function run-image() {
-	if ! 'dock run --privileged=true --rm -i --name=$1 $1 --entrypoint="/build/build_tplino-core.sh" && dock commit $1 $1' ; then
+	if ! (docker.io run --privileged=true -i --name=$1 $1 -c '/build/build_tplino-core.sh' && dock commit $1 $1) ; then
 		rc=1
 		echo "non zero exito status from docker run --rm -t -i --name=$1 $1: $rc"
 	fi

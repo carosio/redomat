@@ -6,11 +6,8 @@ function FROM() {
 	docker tag $1 $NAME
 }
 
-function RUN() {
-	CMD=$@
-	docker run --name=$NAME $NAME bash -c "$CMD" \
-			  && docker commit $NAME $NAME \
-			  && docker rm $NAME
+function RUNP() {
+	RUN --privileged=true "$@"
 }
 
 function ADD() {
@@ -28,9 +25,20 @@ function ADD() {
 			  && docker rm $NAME
 }
 
-function RUNP() {
-	CMD=$@
-	docker run --privileged=true --name=$NAME $NAME bash -c "$CMD" \
+function RUN() {
+	docker_run_args=""
+	#read first char see if it is an -
+	while [ "$1[1]" = "-" ]
+	do
+		docker_run_args="$docker_run_args $1"
+		shift
+	done
+	echo "$@" | docker run $docker_run_args --name=$NAME $NAME bash -- /dev/stdin \
 			  && docker commit $NAME $NAME \
 			  && docker rm $NAME
+}
+
+function ENV() {
+	echo "NYI"
+	exit 1
 }

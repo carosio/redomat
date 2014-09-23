@@ -17,16 +17,15 @@ dock() {
 }
 
 function build-image() {
-	NAME=$TAG-$1
-	if ! dock build -t $NAME $NAME; then
+	if ! dock build -t $1 $1; then
 		rc=1
-		echo "non zero exito status from docker build -t $NAME $NAME: $rc"
+		echo "non zero exito status from docker build -t $1 $1: $rc"
 	fi
 }
 
 function run-image() {
 	NAME=$TAG-$1
-	if ! (docker.io run --privileged=true -i --name=$NAME $NAME -c "/build/build_$1.sh" && dock commit $NAME $NAME) ; then
+	if ! (docker.io run --privileged=true -i --name=$NAME $1 -c "/build/build_$1.sh" && dock commit $NAME $NAME) ; then
 		rc=1
 		echo "non zero exito status from docker run --rm -t -i --name=$NAME $NAME: $rc"
 	fi

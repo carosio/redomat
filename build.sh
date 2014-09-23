@@ -26,7 +26,7 @@ function build-image() {
 
 function run-image() {
 	NAME=$TAG-$1
-	if ! (docker.io run --privileged=true -i --name=$NAME $NAME -c '/build/build_tplino-core.sh' && dock commit $NAME $NAME) ; then
+	if ! (docker.io run --privileged=true -i --name=$NAME $NAME -c "/build/build_$1.sh" && dock commit $NAME $NAME) ; then
 		rc=1
 		echo "non zero exito status from docker run --rm -t -i --name=$NAME $NAME: $rc"
 	fi

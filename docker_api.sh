@@ -23,7 +23,7 @@ function ADD() {
 		FILENAME='.'
 	fi
 
-	docker run --name=$NAME -v $(pwd):/files $NAME bash -c "test -d $LOCATION || mkdir -p $LOCATION && cp /files/$FILE $LOCATION/$FILENAME" \
+	docker run --name=$NAME -v $(pwd):/files $NAME bash -c "test -d $LOCATION || mkdir -p $LOCATION && cp -r /files/$FILE $LOCATION/$FILENAME" \
 			  && docker commit $NAME $NAME \
 			  && docker rm $NAME
 }

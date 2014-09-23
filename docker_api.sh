@@ -1,6 +1,6 @@
 #!/bin/bash
 
-NAME=001-ubuntu-$1
+NAME=001-ubuntu-$USER
 
 function FROM() {
 	docker tag $1 $NAME

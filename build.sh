@@ -34,19 +34,21 @@ function run-image() {
 
 for stage in [0-9][0-9][0-9]-*
 do
-	if [ -e $stage/privileged ]; then
+	if [ -e $stage/run ]; then
 		echo
 		echo "starting to create image from $stage"
 		echo
 		build-image $stage
 		run-image $stage
 		[ $rc -ne 0 ] && exit $rc
-	else
+	elif [ -e $stage/build ]; then
 		echo
 		echo "starting to create image from $stage"
 		echo
 		build-image $stage
 		[ $rc -ne 0 ] && exit $rc
+	else
+		echo "run or build not specified"
 	fi
 done
 

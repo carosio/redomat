@@ -1,6 +1,6 @@
 #!/bin/bash
 
-NAME=001-ubuntu-$USER
+NAME=$STAGE-$USER
 
 function FROM() {
 	docker tag $1 $NAME

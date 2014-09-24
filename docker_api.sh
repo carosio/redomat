@@ -6,29 +6,20 @@ function FROM() {
 	docker tag $1 $NAME
 }
 
-function RUNP() {
-	RUN --privileged=true "$@"
-}
-
 function ADD() {
 	FILE=$1
 	LOCATION=$2
+	RUN --volume="$(pwd):/files" "test -d $LOCATION || mkdir -p $LOCATION && cp -r /files/$FILE $LOCATION/."
+}
 
-	if [ -n $3 ]; then
-		FILENAME=$3
-	else
-		FILENAME='.'
-	fi
-
-	docker run --name=$NAME -v $(pwd):/files $NAME bash -c "test -d $LOCATION || mkdir -p $LOCATION && cp -r /files/$FILE $LOCATION/$FILENAME" \
-			  && docker commit $NAME $NAME \
-			  && docker rm $NAME
+function RUNP() {
+	RUN --privileged=true "$@"
 }
 
 function RUN() {
 	docker_run_args=""
 	#read first char see if it is an -
-	while [ "$1[1]" = "-" ]
+	while [ "${1:0:1}" = "-" ]
 	do
 		docker_run_args="$docker_run_args $1"
 		shift

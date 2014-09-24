@@ -9,7 +9,7 @@ function FROM() {
 function ADD() {
 	FILE=$1
 	LOCATION=$2
-	RUN --volume="$(pwd):/files" "test -d $LOCATION || mkdir -p $LOCATION && cp -r /files/$FILE $LOCATION/."
+	RUN --volume="$(pwd):/files" "test -d $LOCATION || mkdir -p $LOCATION && cp -v -r /files/$FILE $LOCATION/."
 }
 
 function RUNP() {

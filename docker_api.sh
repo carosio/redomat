@@ -1,5 +1,6 @@
 #!/bin/bash
 
+STAGE=$STAGE-$(date +%F-%H-%M)
 NAME=$STAGE-$USER
 
 function FROM() {
@@ -35,8 +36,8 @@ function ENV() {
 }
 
 function END() {
-	docker save $NAME > save-${NAME}.tar
+	docker run --name=$NAME $NAME echo "exporting docker image"
+	docker export $NAME > save-${NAME}.tar
 	cat save-${NAME}.tar | docker import - $STAGE
-	docker rmi $NAME
 	rm -rfv save-${NAME}.tar
 }

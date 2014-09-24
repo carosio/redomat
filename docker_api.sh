@@ -24,7 +24,7 @@ function RUN() {
 		docker_run_args="$docker_run_args $1"
 		shift
 	done
-	echo "$@" | docker run $docker_run_args --name=$NAME $NAME bash -- /dev/stdin \
+	echo "$@" | docker run $docker_run_args -i --name=$NAME $NAME /bin/bash -- /dev/stdin \
 			  && docker commit $NAME $NAME \
 			  && docker rm $NAME
 }

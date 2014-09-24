@@ -33,3 +33,10 @@ function ENV() {
 	echo "NYI"
 	exit 1
 }
+
+function END() {
+	docker save $NAME > save-${NAME}.tar
+	cat save-${NAME}.tar | docker import - $STAGE
+	docker rmi $NAME
+	rm -rfv save-${NAME}.tar
+}

@@ -1,16 +1,23 @@
 #!/bin/bash
 
-STAGE=$STAGE-$(date +%F-%H-%M)
-NAME=$STAGE-$USER
+[ -z "$USER" ] && USER=$(id -un)
+
+BUILDID=$(date +%F-%H%M%S)-$$-$USER
 
 function FROM() {
-	docker tag $1 $NAME
+ASSERTs...
+
+	image=$1
+	assert -z image
+	if image==_PREVIOUS ... -> image=${BUILDID}-${LASTSTAGE}-end_of_stage
+	docker tag $image ${BUILDID}-${STAGE}-pre
 }
 
 function ADD() {
 	FILE=$1
 	LOCATION=$2
-	RUN --volume="$(pwd):/files" "test -d $LOCATION || mkdir -p $LOCATION && cp -v -r /files/$FILE $LOCATION/."
+ASSERTs...
+	RUN --volume="$(pwd ein process nur fuer pwd??):/files" "test -d $LOCATION || mkdir -p $LOCATION && cp -v -r /files/$FILE $LOCATION/."
 }
 
 function RUNP() {
@@ -18,6 +25,7 @@ function RUNP() {
 }
 
 function RUN() {
+	[ -z "$1" .... bark
 	docker_run_args=""
 	#read first char see if it is an -
 	while [ "${1:0:1}" = "-" ]
@@ -26,7 +34,7 @@ function RUN() {
 		shift
 	done
 	echo "$@" | docker run $docker_run_args -i --name=$NAME $NAME /bin/bash -- /dev/stdin \
-			  && docker commit $NAME $NAME \
+			  && docker commit ${BUILDID}-container ${BUILDID}-${STAGE}-lastrun \
 			  && docker rm $NAME
 }
 
@@ -35,9 +43,17 @@ function ENV() {
 	exit 1
 }
 
-function END() {
+function SQUASH() {
 	docker run --name=$NAME $NAME echo "exporting docker image"
-	docker export $NAME > save-${NAME}.tar
-	cat save-${NAME}.tar | docker import - $STAGE
-	rm -rfv save-${NAME}.tar
+	docker export $NAME | docker import - buildid${STAGE}-last..
 }
+_ENDSTAGE...
+{
+	tag..
+	${BUILDID}-${STAGE}-end_of_stage
+}
+
+
+export -f ADD
+export -f _ENDSTAGE
+export -f RUN ..

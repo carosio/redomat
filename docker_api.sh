@@ -74,7 +74,7 @@ function SQUASH() {
 
 function _ENDSTAGE
 {
-	[ -z $FINAL_IAMGE ] && ERROR "FINAL_IAMGE variable not set"
+	[ -z $FINAL_IMAGE ] && ERROR "FINAL_IAMGE variable not set"
 	[ -z $INTER_IMAGE ] && ERROR "INTER_IMAGE variable not set"
 
 	[ -z $(docker instpect $INTER_IMAGE) ] && ERROR "no container to finalize the image from"

@@ -2,7 +2,7 @@
 
 set -e
 
-function die() {
+function ERROR() {
 	echo "$@"
 	exit 1
 }
@@ -81,7 +81,7 @@ function _ENDSTAGE
 	docker tag $INTER_IMAGE $FINAL_IMAGE
 }
 
-export -f die
+export -f ERROR
 export -f STAGE
 export -f FROM
 export -f ADD

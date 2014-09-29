@@ -3,7 +3,7 @@
 set -e
 
 function die() {
-	echo "$*"
+	echo "$@"
 	exit 1
 }
 
@@ -20,14 +20,14 @@ function STAGE() {
 }
 
 function FROM() {
-	[ -z $1 ] && echo "The FROM command needs at leased one argument" && exit 1
+	[ -z $1 ] && die "The FROM command needs at leased one argument"
 	IMAGE=$1
 
-	[ -z $IMAGE ] && echo "IMAGE variable not set" && exit 1
-	[ -z $INTER_IMAGE ] && echo "INTER_IMAGE variable not set" && exit 1
+	[ -z $IMAGE ] && die "IMAGE variable not set"
+	[ -z $INTER_IMAGE ] && die "INTER_IMAGE variable not set"
 
 	if [ ${IMAGE} = "_PREVIOUS" ]; then
-		[ -z $LAST_IMAGE ] && echo "LAST_IMAGE variable not set" && exit 1
+		[ -z $LAST_IMAGE ] && die "LAST_IMAGE variable not set"
 		IMAGE=$LAST_IMAGE
 	fi
 	docker tag $IMAGE $INTER_IMAGE
@@ -37,18 +37,18 @@ function ADD() {
 	FILE=$1
 	TARGET=$2
 
-	[ -z $LOCATION ] && echo "LOCATION variable not set" && exit 1
-	[ -z $FILE ] && echo "FILE variable not set" && exit 1
-	[ -z $TARGET ] && echo "TARGET variable not set" && exit 1
+	[ -z $LOCATION ] && die "LOCATION variable not set"
+	[ -z $FILE ] && die "FILE variable not set"
+	[ -z $TARGET ] && die "TARGET variable not set"
 
 	RUN --volume="$LOCATION:/files" "test -d $TARGET || mkdir -p $TARGET && cp -v -r /files/$FILE $TARGET"
 }
 
 function RUN() {
 
-	[ -z $1 ] && echo "The RUN command needs at leased one argument" && exit 1
-	[ -z $CONTAINER ] && echo "CONTAINER variable not set" && exit 1
-	[ -z $INTER_IMAGE ] && echo "INTER_IMAGE variable not set" && exit 1
+	[ -z $1 ] && die "The RUN command needs at leased one argument"
+	[ -z $CONTAINER ] && die "CONTAINER variable not set"
+	[ -z $INTER_IMAGE ] && die "INTER_IMAGE variable not set"
 
 	docker_run_args=""
 	#read first char see if it is an -
@@ -64,13 +64,12 @@ function RUN() {
 }
 
 function ENV() {
-	echo "NYI"
-	exit 1
+	die "NYI"
 }
 
 function SQUASH() {
-	[ -z $CONTAINER ] && echo "CONTAINER variable not set" && exit 1
-	[ -z $INTER_IMAGE ] && echo "INTER_IMAGE variable not set" && exit 1
+	[ -z $CONTAINER ] && die "CONTAINER variable not set"
+	[ -z $INTER_IMAGE ] && die "INTER_IMAGE variable not set"
 
 	docker run --name=$CONTAINER $INTER_IMAGE echo "exporting docker image"
 	docker export $CONTAINER | docker import - $INTER_IMAGE
@@ -78,10 +77,10 @@ function SQUASH() {
 
 function _ENDSTAGE
 {
-	[ -z $FINAL_IAMGE ] && echo "FINAL_IAMGE variable not set" && exit 1
-	[ -z $INTER_IMAGE ] && echo "INTER_IMAGE variable not set" && exit 1
+	[ -z $FINAL_IAMGE ] && die "FINAL_IAMGE variable not set"
+	[ -z $INTER_IMAGE ] && die "INTER_IMAGE variable not set"
 
-	[ -z $(docker instpect $INTER_IMAGE) ] && echo "no container to finalize the image from" && exit 1
+	[ -z $(docker instpect $INTER_IMAGE) ] && die "no container to finalize the image from"
 	docker tag $INTER_IMAGE $FINAL_IMAGE
 }
 

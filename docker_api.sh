@@ -1,23 +1,37 @@
 #!/bin/bash
 
+set -e
+
 [ -z "$USER" ] && USER=$(id -un)
 
 BUILDID=$(date +%F-%H%M%S)-$$-$USER
+CONTAINER=${BUILDID}-container
+INTER_IMAGE=${BUILDID}-${STAGE}-lastrun
+FINAL_IMAGE=${BUILDID}-${STAGE}-end_of_stage
+LAST_IMAGE=${BUILDID}-${LASTSTAGE}-end_of_stage
 
 function FROM() {
-ASSERTs...
+	IMAGE=$1
 
-	image=$1
-	assert -z image
-	if image==_PREVIOUS ... -> image=${BUILDID}-${LASTSTAGE}-end_of_stage
-	docker tag $image ${BUILDID}-${STAGE}-pre
+	[ ! -z $IMAGE ] && echo "IMAGE variable not set" && exit 1
+	[ ! -z $LAST_IMAGE ] && echo "LAST_IMAGE variable not set" && exit 1
+	[ ! -z $INTER_IMAGE ] && echo "INTER_IMAGE variable not set" && exit 1
+
+	if [ ${IMAGE}="_PREVIOUS" ]; then
+		IMAGE=$LAST_IMAGE
+	fi
+	docker tag $IMAGE $INTER_IMAGE
 }
 
 function ADD() {
 	FILE=$1
-	LOCATION=$2
-ASSERTs...
-	RUN --volume="$(pwd ein process nur fuer pwd??):/files" "test -d $LOCATION || mkdir -p $LOCATION && cp -v -r /files/$FILE $LOCATION/."
+	TARGET=$2
+
+	[ ! -z $LOCATION ] && echo "LOCATION variable not set" && exit 1
+	[ ! -z $FILE ] && echo "FILE variable not set" && exit 1
+	[ ! -z $TARGET ] && echo "TARGET variable not set" && exit 1
+
+	RUN --volume="$LOCATION:/files" "test -d $TARGET || mkdir -p $TARGET && cp -v -r /files/$FILE $TARGET/."
 }
 
 function RUNP() {
@@ -25,7 +39,11 @@ function RUNP() {
 }
 
 function RUN() {
-	[ -z "$1" .... bark
+
+	[ ! -z $1 ]i && echo "The RUN command need at leased one argument" && exit 1
+	[ ! -z $CONTAINER ] && echo "CONTAINER variable not set" && exit 1
+	[ ! -z $INTER_IMAGE ] && echo "INTER_IMAGE variable not set" && exit 1
+
 	docker_run_args=""
 	#read first char see if it is an -
 	while [ "${1:0:1}" = "-" ]
@@ -33,9 +51,10 @@ function RUN() {
 		docker_run_args="$docker_run_args $1"
 		shift
 	done
-	echo "$@" | docker run $docker_run_args -i --name=$NAME $NAME /bin/bash -- /dev/stdin \
-			  && docker commit ${BUILDID}-container ${BUILDID}-${STAGE}-lastrun \
-			  && docker rm $NAME
+
+	echo "$@" | docker run $docker_run_args -i --name=$CONTAINER $INTER_IMAGE /bin/bash -- /dev/stdin \
+			  && docker commit $CONTAINER $INTER_IMAGE \
+			  && docker rm $CONTAINER
 }
 
 function ENV() {
@@ -44,16 +63,26 @@ function ENV() {
 }
 
 function SQUASH() {
-	docker run --name=$NAME $NAME echo "exporting docker image"
-	docker export $NAME | docker import - buildid${STAGE}-last..
+	[ ! -z $CONTAINER ] && echo "CONTAINER variable not set" && exit 1
+	[ ! -z $INTER_IMAGE ] && echo "INTER_IMAGE variable not set" && exit 1
+
+	docker run --name=$CONTAINER $INTER_IMAGE echo "exporting docker image"
+	docker export $CONTAINER | docker import - $INTER_IMAGE
 }
-_ENDSTAGE...
+
+function _ENDSTAGE
 {
-	tag..
-	${BUILDID}-${STAGE}-end_of_stage
+	[ ! -z $FINAL_IAMGE ] && echo "FINAL_IAMGE variable not set" && exit 1
+	[ ! -z $INTER_IMAGE ] && echo "INTER_IMAGE variable not set" && exit 1
+
+	[ ! -z $(docker instpect $INTER_IMAGE) ] && echo "no container to finalize the image from" && exit 1
+	docker tag $INTER_IMAGE $FINAL_IMAGE
 }
 
-
-export -f ADD
-export -f _ENDSTAGE
-export -f RUN ..
+export -f  FROM
+export -f  ADD
+export -f  RUNP
+export -f  RUN
+export -f  ENV
+export -f  SQUASH
+export -f  _ENDSTAGE

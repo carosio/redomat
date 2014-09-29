@@ -11,9 +11,6 @@ function die() {
 
 export BUILDID=$(date +%F-%H%M%S)-$$-$USER
 export CONTAINER=${BUILDID}-container
-export INTER_IMAGE=${BUILDID}-${STAGE}-lastrun
-export FINAL_IMAGE=${BUILDID}-${STAGE}-end_of_stage
-export LAST_IMAGE=${BUILDID}-${LASTSTAGE}-end_of_stage
 
 function STAGE() {
 	[ ! "$STAGE" = "$1" ] && die "STAGE directive conflicts with directory name"
@@ -84,9 +81,11 @@ function _ENDSTAGE
 	docker tag $INTER_IMAGE $FINAL_IMAGE
 }
 
-export -f  FROM
-export -f  ADD
-export -f  RUN
-export -f  ENV
-export -f  SQUASH
-export -f  _ENDSTAGE
+export -f die
+export -f STAGE
+export -f FROM
+export -f ADD
+export -f RUN
+export -f ENV
+export -f SQUASH
+export -f _ENDSTAGE

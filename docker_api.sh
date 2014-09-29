@@ -31,7 +31,7 @@ function ADD() {
 	[ ! -z $FILE ] && echo "FILE variable not set" && exit 1
 	[ ! -z $TARGET ] && echo "TARGET variable not set" && exit 1
 
-	RUN --volume="$LOCATION:/files" "test -d $TARGET || mkdir -p $TARGET && cp -v -r /files/$FILE $TARGET/."
+	RUN --volume="$LOCATION:/files" "test -d $TARGET || mkdir -p $TARGET && cp -v -r /files/$FILE $TARGET"
 }
 
 function RUNP() {

@@ -12,6 +12,7 @@ do
 	[ ! -x $STAGE/Dockerfile.sh ] && echo "$STAGE/Dockerfile.sh is dose not exist or is not executable" && exit 1
 	cd $STAGE
 	export STAGE
+	export LOCATION=$PWD
 	export INTER_IMAGE=${BUILDID}-${STAGE}-lastrun
 	export FINAL_IMAGE=${BUILDID}-${STAGE}-end_of_stage
 	export LAST_IMAGE=${BUILDID}-${LASTSTAGE}-end_of_stage

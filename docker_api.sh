@@ -33,12 +33,14 @@ function FROM() {
 function ADD() {
 	FILE=$1
 	TARGET=$2
+	TARGET_dir=${TARGET%/*}
 
 	[ -z $LOCATION ] && ERROR "LOCATION variable not set"
 	[ -z $FILE ] && ERROR "FILE variable not set"
 	[ -z $TARGET ] && ERROR "TARGET variable not set"
+	[ -z $TARGET_dir ] && ERROR "Woopsie TARGET_dir could not be determined"
 
-	RUN --volume="$LOCATION:/files" "test -d $TARGET || mkdir -p $TARGET && cp -v -r /files/$FILE $TARGET"
+	RUN --volume="$LOCATION:/files" "test -d $TARGET_dir || mkdir -p $TARGET_dir && cp -v -r /files/$FILE $TARGET"
 }
 
 function RUN() {

@@ -15,10 +15,10 @@ function FROM() {
 	IMAGE=$1
 
 	[ -z $IMAGE ] && echo "IMAGE variable not set" && exit 1
-	[ -z $LAST_IMAGE ] && echo "LAST_IMAGE variable not set" && exit 1
 	[ -z $INTER_IMAGE ] && echo "INTER_IMAGE variable not set" && exit 1
 
 	if [ ${IMAGE}="_PREVIOUS" ]; then
+		[ -z $LAST_IMAGE ] && echo "LAST_IMAGE variable not set" && exit 1
 		IMAGE=$LAST_IMAGE
 	fi
 	docker tag $IMAGE $INTER_IMAGE

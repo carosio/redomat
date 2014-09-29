@@ -11,13 +11,13 @@ export FINAL_IMAGE=${BUILDID}-${STAGE}-end_of_stage
 export LAST_IMAGE=${BUILDID}-${LASTSTAGE}-end_of_stage
 
 function FROM() {
-	[ -z $1 ] && echo "The RUN command needs at leased one argument" && exit 1
+	[ -z $1 ] && echo "The FROM command needs at leased one argument" && exit 1
 	IMAGE=$1
 
 	[ -z $IMAGE ] && echo "IMAGE variable not set" && exit 1
 	[ -z $INTER_IMAGE ] && echo "INTER_IMAGE variable not set" && exit 1
 
-	if [ ${IMAGE}="_PREVIOUS" ]; then
+	if [ ${IMAGE} = "_PREVIOUS" ]; then
 		[ -z $LAST_IMAGE ] && echo "LAST_IMAGE variable not set" && exit 1
 		IMAGE=$LAST_IMAGE
 	fi

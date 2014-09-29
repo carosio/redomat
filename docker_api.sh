@@ -70,6 +70,7 @@ function SQUASH() {
 
 	docker run --name=$CONTAINER $INTER_IMAGE echo "exporting docker image"
 	docker export $CONTAINER | docker import - $INTER_IMAGE
+	docker rm $CONTAINER
 }
 
 function _ENDSTAGE
@@ -77,7 +78,6 @@ function _ENDSTAGE
 	[ -z $FINAL_IMAGE ] && ERROR "FINAL_IAMGE variable not set"
 	[ -z $INTER_IMAGE ] && ERROR "INTER_IMAGE variable not set"
 
-	[ -z $(docker inspect $INTER_IMAGE) ] && ERROR "no container to finalize the image from"
 	docker tag $INTER_IMAGE $FINAL_IMAGE
 }
 

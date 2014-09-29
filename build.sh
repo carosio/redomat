@@ -12,7 +12,7 @@ do
 	[ ! -x $stage/Dockerfile.sh ] && echo "$stage/Dockerfile.sh is dose not exist or is not executable" && exit 1
 	cd $stage
 	STAGE=$(grep "^\s*STAGE=" ./Dockerfile.sh | cut -d= -f2-)
-	[ ! -z SRAGE ] && echo "STAGE variable not set" && exit 1
+	[ -z $STAGE ] && echo "STAGE variable not set" && exit 1
 	echo "starting stage $STAGE"
 	./Dockerfile.sh
 	SQUASH

@@ -2,6 +2,11 @@
 
 set -e
 
+function die() {
+	echo "$*"
+	exit 1
+}
+
 [ -z "$USER" ] && USER=$(id -un)
 
 export BUILDID=$(date +%F-%H%M%S)-$$-$USER
@@ -9,6 +14,10 @@ export CONTAINER=${BUILDID}-container
 export INTER_IMAGE=${BUILDID}-${STAGE}-lastrun
 export FINAL_IMAGE=${BUILDID}-${STAGE}-end_of_stage
 export LAST_IMAGE=${BUILDID}-${LASTSTAGE}-end_of_stage
+
+function STAGE() {
+	[ ! "$STAGE" = "$1" ] && die "STAGE directive conflicts with directory name"
+}
 
 function FROM() {
 	[ -z $1 ] && echo "The FROM command needs at leased one argument" && exit 1
@@ -33,10 +42,6 @@ function ADD() {
 	[ -z $TARGET ] && echo "TARGET variable not set" && exit 1
 
 	RUN --volume="$LOCATION:/files" "test -d $TARGET || mkdir -p $TARGET && cp -v -r /files/$FILE $TARGET"
-}
-
-function RUNP() {
-	RUN --privileged=true "$@"
 }
 
 function RUN() {
@@ -82,7 +87,6 @@ function _ENDSTAGE
 
 export -f  FROM
 export -f  ADD
-export -f  RUNP
 export -f  RUN
 export -f  ENV
 export -f  SQUASH

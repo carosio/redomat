@@ -4,11 +4,11 @@ set -e
 
 [ -z "$USER" ] && USER=$(id -un)
 
-BUILDID=$(date +%F-%H%M%S)-$$-$USER
-CONTAINER=${BUILDID}-container
-INTER_IMAGE=${BUILDID}-${STAGE}-lastrun
-FINAL_IMAGE=${BUILDID}-${STAGE}-end_of_stage
-LAST_IMAGE=${BUILDID}-${LASTSTAGE}-end_of_stage
+export BUILDID=$(date +%F-%H%M%S)-$$-$USER
+export CONTAINER=${BUILDID}-container
+export INTER_IMAGE=${BUILDID}-${STAGE}-lastrun
+export FINAL_IMAGE=${BUILDID}-${STAGE}-end_of_stage
+export LAST_IMAGE=${BUILDID}-${LASTSTAGE}-end_of_stage
 
 function FROM() {
 	[ -z $1 ] && echo "The RUN command needs at leased one argument" && exit 1

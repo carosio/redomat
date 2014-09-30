@@ -9,16 +9,17 @@ set -e
 
 for STAGE in [0-9][0-9][0-9]-*
 do
-	[ ! -x $STAGE/Dockerfile.sh ] && echo "$STAGE/Dockerfile.sh is dose not exist or is not executable" && exit 1
-	cd $STAGE
+	[ ! -x $STAGE/Dockerfile.sh ] && ERROR "$STAGE/Dockerfile.sh is does not exist or is not executable"
 	export STAGE
-	export LOCATION=$PWD
-	export INTER_IMAGE=${BUILDID}-${STAGE}-lastrun
-	export FINAL_IMAGE=${BUILDID}-${STAGE}-end_of_stage
-	export LAST_IMAGE=${BUILDID}-${LASTSTAGE}-end_of_stage
+	export CURRENT_IMAGE=${BUILDID}-${STAGE}-current
+	[ -n "$LASTSTAGE" ] && export LASTSTAGE
+	(
+	cd $STAGE
+	export LOCATION=$(pwd)
+	[ -n "$LASTSTAGE" ] && export PREVIOUS_STAGE=${BUILDID}-${LASTSTAGE}
 	./Dockerfile.sh
 	SQUASH
 	_ENDSTAGE
+	)
 	LASTSTAGE=${STAGE}
-	cd -
 done

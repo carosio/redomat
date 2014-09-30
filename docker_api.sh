@@ -16,38 +16,39 @@ function STAGE() {
 	[ ! "$STAGE" = "$1" ] && ERROR "STAGE directive conflicts with directory name"
 }
 
+# initializes the "current-image-pointer" ( $CURRENT_IMAGE )
+# as a docker-commit
 function FROM() {
-	[ -z $1 ] && ERROR "The FROM command needs at leased one argument"
-	IMAGE=$1
+	[ -z $1 ] && ERROR "The FROM command needs at least one argument"
+	FROMIMAGE=$1
 
-	[ -z $IMAGE ] && ERROR "IMAGE variable not set"
-	[ -z $INTER_IMAGE ] && ERROR "INTER_IMAGE variable not set"
+	[ -z $FROMIMAGE ] && ERROR "FROMIMAGE argument not given"
 
-	if [ ${IMAGE} = "_PREVIOUS" ]; then
-		[ -z $LAST_IMAGE ] && ERROR "LAST_IMAGE variable not set"
-		IMAGE=$LAST_IMAGE
+	if [ ${FROMIMAGE} = "_PREVIOUS" ]; then
+		[ -z "$PREVIOUS_STAGE" ] && ERROR "unable to resolve FROM _PREVIOUS."
+		FROMIMAGE=$PREVIOUS_STAGE
 	fi
-	docker tag $IMAGE $INTER_IMAGE
+	docker tag $FROMIMAGE $CURRENT_IMAGE
 }
 
 function ADD() {
-	FILE=$1
-	TARGET=$2
+	FILE=$1 ; shift
+	TARGET=$1 ; shift
 	TARGET_dir=${TARGET%/*}
 
 	[ -z $LOCATION ] && ERROR "LOCATION variable not set"
-	[ -z $FILE ] && ERROR "FILE variable not set"
-	[ -z $TARGET ] && ERROR "TARGET variable not set"
+	[ -z $FILE ] && ERROR "FILE argument not given"
+	[ -z $TARGET ] && ERROR "TARGET argument not given"
 	[ -z $TARGET_dir ] && ERROR "Woopsie TARGET_dir could not be determined"
 
-	RUN --volume="$LOCATION:/files" "test -d $TARGET_dir || mkdir -p $TARGET_dir && cp -v -r /files/$FILE $TARGET"
+	RUN --volume="$LOCATION:/files" "mkdir -p $TARGET_dir && cp -rv /files/$FILE $TARGET"
 }
 
 function RUN() {
+	[ -z $1 ] && ERROR "The RUN command needs at least one argument"
 
-	[ -z $1 ] && ERROR "The RUN command needs at leased one argument"
 	[ -z $CONTAINER ] && ERROR "CONTAINER variable not set"
-	[ -z $INTER_IMAGE ] && ERROR "INTER_IMAGE variable not set"
+	[ -z $CURRENT_IMAGE ] && ERROR "CURRENT_IMAGE argument not given (RUN)"
 
 	docker_run_args=""
 	#read first char see if it is an -
@@ -57,8 +58,8 @@ function RUN() {
 		shift
 	done
 
-	echo "$@" | docker run $docker_run_args -i --name=$CONTAINER $INTER_IMAGE /bin/bash -- /dev/stdin \
-			  && docker commit $CONTAINER $INTER_IMAGE \
+	echo "$@" | docker run $docker_run_args -i --name=$CONTAINER $CURRENT_IMAGE /bin/bash -- /dev/stdin \
+			  && docker commit $CONTAINER $CURRENT_IMAGE \
 			  && docker rm $CONTAINER
 }
 
@@ -68,19 +69,18 @@ function ENV() {
 
 function SQUASH() {
 	[ -z $CONTAINER ] && ERROR "CONTAINER variable not set"
-	[ -z $INTER_IMAGE ] && ERROR "INTER_IMAGE variable not set"
+	[ -z $CURRENT_IMAGE ] && ERROR "CURRENT_IMAGE variable not set (SQUASH)"
 
-	docker run --name=$CONTAINER $INTER_IMAGE echo "exporting docker image"
-	docker export $CONTAINER | docker import - $INTER_IMAGE
+	docker run --name=$CONTAINER $CURRENT_IMAGE echo "exporting docker image"
+	docker export $CONTAINER | docker import - $CURRENT_IMAGE
 	docker rm $CONTAINER
 }
 
 function _ENDSTAGE
 {
-	[ -z $FINAL_IMAGE ] && ERROR "FINAL_IAMGE variable not set"
-	[ -z $INTER_IMAGE ] && ERROR "INTER_IMAGE variable not set"
+	[ -z $CURRENT_IMAGE ] && ERROR "CURRENT_IMAGE variable not set"
 
-	docker tag $INTER_IMAGE $FINAL_IMAGE
+	docker tag $CURRENT_IMAGE ${BUILDID}-${STAGE}
 }
 
 export -f ERROR

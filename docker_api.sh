@@ -67,6 +67,17 @@ function ENV() {
 	ERROR "NYI"
 }
 
+function ENTRYPOINT() {
+	ENTRYPOINT="$1"
+	[ -z $ENTRYPOINT ] && ERROR "no ENTRYPOINT set"
+	[ -z $CONTAINER ] && ERROR "CONTAINER variable not set"
+	[ -z $CURRENT_IMAGE ] && ERROR "CURRENT_IMAGE variable not set (SQUASH)"
+
+	docker run --entrypoint="$ENTRYPOINT" --name=$CONTAINER $CURRENT_IMAGE \
+			  && docker commit $CONTAINER $CURRENT_IMAGE \
+			  && docker rm $CONTAINER
+}
+
 function SQUASH() {
 	[ -z $CONTAINER ] && ERROR "CONTAINER variable not set"
 	[ -z $CURRENT_IMAGE ] && ERROR "CURRENT_IMAGE variable not set (SQUASH)"
@@ -89,5 +100,6 @@ export -f FROM
 export -f ADD
 export -f RUN
 export -f ENV
+export -f ENTRYPOINT
 export -f SQUASH
 export -f _ENDSTAGE

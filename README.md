@@ -1,6 +1,6 @@
-#DockerBuilder
+# Redomat -- Environment for reproducable building, integration, testing
 
-To use the DockerBuilder to build a reference tposs, execute:
+To use Redomat to build a reference tposs, execute:
 
 ```
 ./build.sh

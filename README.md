@@ -5,6 +5,7 @@ To use Redomat to build a reference tposs, execute:
 ```
 ./build.sh all
 ```
+Setting the stage from which to start from is not a requirement.
 
 Once all stages are build you have the option to start building from a different stage, passing the stage to build from and the build-id:
 

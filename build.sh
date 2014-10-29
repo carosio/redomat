@@ -6,6 +6,8 @@ NC='\e[0m'
 
 [ "${1}" = "-h" ] || [ -z ${1} ] && echo -e "\nTo begin the build process use one of the two methods\n./build.sh <STAGE> <BUILD-ID> \nor \n./build.sh all\n" && exit 0
 
+[ $1 = "-h" ] && echo "./build.sh <STAGE> <BUILD-ID>" && exit 0
+
 [ ! -x build.sh ] && echo "build.sh is dose not exist or is not executable" && exit 1
 [ ! -x docker_api.sh ] && echo "docker_api.sh is dose not exist or is not executable" && exit 1
 
@@ -28,7 +30,7 @@ mkdir -pv ./build-logs
 ### reading all docker related functions
 . ./docker_api.sh
 
-### overwrite BUILDID in case it is passed
+### overwrite BUILDID if it is passed
 [ ! -z "${2}" ] && export BUILDID=${2} && export CONTAINER=${BUILDID}-container
 
 #skip everything till stage = begin and then overwrite the Laststaege

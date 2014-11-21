@@ -3,11 +3,16 @@
 To use Redomat to build a reference tposs, execute:
 
 ```
-./build.sh <stage>
+./build.sh all
 ```
-Setting the stage from which to start from is not a requirement.
 
-Once the build is successful use
+Once all stages are build you have the option to start building from a different stage, passing the stage to build from and the build-id:
+
+```
+./build.sh <STAGE> <BUILS-ID>
+```
+
+Use
 
 ```
 docker run --rm -ti -d -p <hostport>:80 <IMAGE> /build/serve.sh

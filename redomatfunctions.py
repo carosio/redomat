@@ -1,37 +1,30 @@
 from docker import Client
 import sys
 
-class redomat:
+class Redomat:
 
 	def __init__(self,client=None):
 		if client is None:
-			error("client is not set")
+			raise Exception("client is not set")
 		self.cli = client
 		self.current_image = "test3"
 
-	def error(*objs):
-		print("ERROR: ", *objs, file=sys.stderr)
-
 	def FROM(self, image=None):
 		if image is None:
-			error("no image given to work with")
-			return 1
+			raise Exception("no image given to work with")
 		print(str(image))
 		self.cli.tag(image,self.current_image)
 
-	def STAGE(text=None,):
+	def STAGE(self, text=None):
 		if text is None:
-			error("No stage given")
-			return 1
+			raise Exception("No stage given")
 		print(text)
 
-	def RUN(cmd=None,):
+	def RUN(self, cmd=None):
 		if self.cli is None:
-			error("No client given to work with")
-			return 1
+			raise Exception("No client given to work with")
 		if cmd is None:
-			error("RUN needs atleast one commadn")
-			return 1
+			raise Exception("RUN needs atleast one commadn")
 		self.cli.create_container(image=img, name='run-container', command=cmd)
 	#	cli.start(
 

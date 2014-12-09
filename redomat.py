@@ -23,8 +23,11 @@ inputfile = open('Dockerfile.sh')
 
 redo = Redomat(docker.Client(base_url='unix://var/run/docker.sock'))
 for line in inputfile:
-	if not line.strip() == "":
-		data_parser(line.strip(), redo)
+	if line.strip() == "":
+		continue
+	if line.strip().startswith("#"):
+		continue
+	data_parser(line.strip(), redo)
 
 inputfile.close()
 

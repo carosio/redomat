@@ -31,10 +31,13 @@ class Redomat:
 		if self.client is None:
 			raise Exception("No client given to work with")
 		if cmd is None:
-			raise Exception("RUN needs atleast one commadn")
+			raise Exception("RUN needs atleast one comman")
 		name = "%s-%s-%s"%(self.build_id, self.current_stage, self._nextseq())
 		self.client.create_container(image=self.current_image, name=name, command=cmd)
-	#	client.start(
+		self.client.start(container=name, privileged=True)
+		if self.client.wait(container=name) is not 0:
+			raise Exception("Container " + name + " exited with a non zero exit status")
+		self.client.commit(container=name, repository=self.current_image)
 
 #FROM('ubuntu:14.04',client)
 #client.tag('ubuntu:14.04', 'test')

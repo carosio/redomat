@@ -7,8 +7,8 @@ class Redomat:
 		if client is None:
 			raise Exception("client is not set")
 		self.client = client
-		self.current_stage = 'undefined'
-		self.current_image = "test3"
+		self.current_stage = "undefined"
+		self.current_image = "undefined"
 		self.build_id = "%s-%s"%(time.strftime("%F-%H%M%S"), os.getenv('LOGNAME'))
 		self.run_sequence = 0
 
@@ -19,13 +19,12 @@ class Redomat:
 	def FROM(self, image=None):
 		if image is None:
 			raise Exception("no image given to work with")
-		print(str(image))
 		self.client.tag(image,self.current_image)
 
-	def STAGE(self, text=None):
-		if text is None:
+	def STAGE(self, stage=None):
+		if stage is None:
 			raise Exception("No stage given")
-		print(text)
+		self.current_stage=stage
 
 	def RUN(self, cmd=None):
 		if self.client is None:
@@ -39,6 +38,26 @@ class Redomat:
 			raise Exception("Container " + name + " exited with a non zero exit status")
 		self.client.commit(container=name, repository=self.current_image)
 
-#FROM('ubuntu:14.04',client)
-#client.tag('ubuntu:14.04', 'test')
-#print(sys.exc_info())
+	def ADD(self, file_name=None, target_dir=None):
+		if filename is None:
+			raise Exception("No filename given")
+		if target_dir is None:
+			raise Exception("No target directory given")
+		if os.path.exists(file_name) is False:
+			raise Exception("No such file")
+		file_name=os.path.basename(file_name)
+		self.client.create_container(image=self.current_image, name=name, volumes=file_path, command="mkdir -p " + target_dir  + " && cp -rv /files/" + file_name + " " + target_dir)
+		self.client.start(name=name, bind={
+				'/files/':
+					{
+						'bind': volume,
+						'ro':True
+					}})
+		self.client.commit(container=name, repository=self.current_image)
+
+	def WORKDIR(self, directory=None):
+		if directory is None:
+			raise Exception("No directory given")
+		name = "%s-%s-%s"%(self.build_id, self.current_stage, self._nextseq())
+		delf.client.create_container(image=self.current_image, name=name, working_dir=dircetory)
+		self.client.commit(container=name, repository=self.current_image)

@@ -3,16 +3,22 @@ import xml.etree.ElementTree as XML
 manifest_root = XML.parse('tposs.xml').getroot()
 build_cmd = {}
 
-for buildstage in manifest_root.findall('buildstage'):
+stages = []
+
+for buildstage in manifest_root.iter('buildstage'):
 	cmd = ""
 	target = ""
-	ID = buildstage.get('id')
-	build_cmd.update({ID : None})
-	for bitbake_target in buildstage.findall('bitbake_target'):
-		if bitbake_target.get('command') is not "":
+	stage = {'id': buildstage.get('id')}
+	stages.append(stage)
+
+	for stage_command in buildstage.iter():
+		if stage_command == 'dockerline':
+			stage['commands'].append({...})
+
+		if bitbake_target.get('command'):
 			cmd += bitbake_target.get('command') + " "
 		target += bitbake_target.text + " "
-		build_cmd.update({ID : cmd + target})
+		stage['cmd'] = cmd + target
 
 
 # xml find all buildstages and buildcommands etc.
@@ -24,4 +30,4 @@ for buildstage in manifest_root.findall('buildstage'):
 #	for cmd in buildstage.findall('bitbake_target'):
 #		text += cmd.text + " "
 #	build_cmd.update({buildstage.get('id') : text})
-print(build_cmd)
+print("\n".join(map(lambda x: str(x), stages)))

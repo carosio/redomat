@@ -4,7 +4,6 @@ import sys
 import os
 from redomatfunctions import Redomat
 
-
 def data_parser(docker_line, redo):
 	docker_command = docker_line.split(" ")
 
@@ -28,5 +27,4 @@ for dockerfile in sys.argv[1:]:
 		if line.strip().startswith("#"):
 			continue
 		data_parser(line.strip(), redo)
-
 	inputfile.close()

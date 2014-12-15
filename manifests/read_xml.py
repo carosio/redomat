@@ -15,11 +15,11 @@ for buildstage in manifest_root.iter('buildstage'):
 			stage['dockerlines'].append(stage_command.text)
 
 		if stage_command.tag == 'bitbake_target':
-
+			stage['dockerlines'].append('RUN bitbake ')
 			if stage_command.get('command'):
-				stage['dockerlines'].append(stage_command.get('command'))
+				stage['dockerlines'].append(stage['dockerlines'].pop() + '-c ' + stage_command.get('command'))
 				stage['dockerlines'].append(stage['dockerlines'].pop() + " " + stage_command.text)
 			else:
-				stage['dockerlines'].append(stage_command.text)
+				stage['dockerlines'].append(stage['dockerlines'].pop() + stage_command.text)
 
 print("\n".join(map(lambda x: str(x), stages)))

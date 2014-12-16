@@ -25,6 +25,7 @@ class Redomat:
 		if stage is None:
 			raise Exception("No stage given")
 		self.current_stage=stage
+		self.current_image="%s-%s-%s"%(time.strftime("%F-%H%M%S"), os.getenv('LOGNAME'), self.current_stage)
 
 	def RUN(self, cmd=None):
 		if self.client is None:

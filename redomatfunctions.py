@@ -46,7 +46,9 @@ class Redomat:
 		if os.path.exists(file_name) is False:
 			raise Exception("No such file")
 		file_name=os.path.basename(file_name)
-		self.client.create_container(image=self.current_image, name=name, volumes=file_path, command="mkdir -p " + target_dir  + " && cp -rv /files/" + file_name + " " + target_dir)
+		volume_path=os.path.abspath(self.current_stage)
+
+		self.client.create_container(image=self.current_image, name=name, volumes=volume_path, command="mkdir -p " + target_dir  + " && cp -rv /files/" + file_name + " " + target_dir)
 		self.client.start(name=name, bind={
 				'/files/':
 					{

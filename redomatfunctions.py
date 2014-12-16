@@ -39,21 +39,28 @@ class Redomat:
 			raise Exception("Container " + name + " exited with a non zero exit status")
 		self.client.commit(container=name, repository=self.current_image)
 
-	def ADD(self, file_name=None, target_dir=None):
-		if filename is None:
+	def ADD(self, parameter=None):
+		if parameter is None:
+			raise Exception("No parameter given")
+		parameter=parameter.split()
+		file_name=self.current_stage + "/" + parameter[0]
+		target_dir=parameter[1]
+		if file_name is None:
 			raise Exception("No filename given")
 		if target_dir is None:
 			raise Exception("No target directory given")
 		if os.path.exists(file_name) is False:
-			raise Exception("No such file")
+			raise Exception("No such file: " + file_name)
 		file_name=os.path.basename(file_name)
+		print(file_name)
 		volume_path=os.path.abspath(self.current_stage)
-
+		print(volume_path)
+		name = "%s-%s-%s"%(self.build_id, self.current_stage, self._nextseq())
 		self.client.create_container(image=self.current_image, name=name, volumes=volume_path, command="mkdir -p " + target_dir  + " && cp -rv /files/" + file_name + " " + target_dir)
-		self.client.start(name=name, bind={
+		self.client.start(container=name, binds={
 				'/files/':
 					{
-						'bind': volume,
+						'bind': volume_path,
 						'ro':True
 					}})
 		self.client.commit(container=name, repository=self.current_image)

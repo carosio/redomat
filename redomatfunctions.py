@@ -22,6 +22,9 @@ class Redomat:
 		self.client.tag(image,self.current_image)
 
 	def STAGE(self, stage=None):
+		"""
+		obsolete by xml file (stage id)
+		"""
 		if stage is None:
 			raise Exception("No stage given")
 		self.current_stage=stage
@@ -42,9 +45,8 @@ class Redomat:
 	def ADD(self, parameter=None):
 		if parameter is None:
 			raise Exception("No parameter given")
-		parameter=parameter.split()
-		file_name=self.current_stage + "/" + parameter[0]
-		target_dir=parameter[1]
+		file_name, target_dir =parameter.split()
+		file_name=self.current_stage + "/" + file_name
 		if file_name is None:
 			raise Exception("No filename given")
 		if target_dir is None:

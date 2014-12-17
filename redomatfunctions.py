@@ -12,6 +12,7 @@ class Redomat:
 		self.client = client
 		self.current_stage = "undefined"
 		self.current_image = "undefined"
+		self.laststage = "undefined"
 		self.build_id = "%s-%s"%(time.strftime("%F-%H%M%S"), os.getenv('LOGNAME'))
 		self.run_sequence = 0
 

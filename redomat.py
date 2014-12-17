@@ -17,7 +17,7 @@ def xml_parser(xml_file):
 
 		for stage_command in buildstage.iter():
 			if stage_command.tag == 'prestage':
-				stage['dockerlines'].append("FROM " + stage_command.text)
+				stage['dockerlines'].append("FROM " + redo.laststage)
 
 			elif stage_command.tag == 'bitbake_target':
 				stage['dockerlines'].append('RUN bitbake ')
@@ -56,4 +56,5 @@ for dockerfile in sys.argv[1:]:
 		for line in stage['dockerlines']:
 			print(line)
 			data_parser(line, redo)
-		print()
+		redo.laststage = redo.current_image
+		print("done building: " + stage['id'])

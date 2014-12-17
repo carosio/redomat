@@ -4,6 +4,9 @@ import sys,time, os
 class Redomat:
 
 	def __init__(self,client=None):
+		"""
+			a builder for yocto using docker to support builds on top of other builds
+		"""
 		if client is None:
 			raise Exception("client is not set")
 		self.client = client
@@ -13,24 +16,25 @@ class Redomat:
 		self.run_sequence = 0
 
 	def _nextseq(self):
+		"""
+			counter for RUN command
+		"""
 		self.run_sequence = self.run_sequence + 1
 		return "%03i"%self.run_sequence
 
 	def FROM(self, image=None):
+		"""
+			tag an image to begin from
+		"""
+		self.current_image="%s-%s-%s"%(time.strftime("%F-%H%M%S"), os.getenv('LOGNAME'), self.current_stage)
 		if image is None:
 			raise Exception("no image given to work with")
 		self.client.tag(image,self.current_image)
 
-	def STAGE(self, stage=None):
-		"""
-		obsolete by xml file (stage id)
-		"""
-		if stage is None:
-			raise Exception("No stage given")
-		self.current_stage=stage
-		self.current_image="%s-%s-%s"%(time.strftime("%F-%H%M%S"), os.getenv('LOGNAME'), self.current_stage)
-
 	def RUN(self, cmd=None):
+		"""
+			RUN command within a docker container
+		"""
 		if self.client is None:
 			raise Exception("No client given to work with")
 		if cmd is None:
@@ -43,6 +47,9 @@ class Redomat:
 		self.client.commit(container=name, repository=self.current_image)
 
 	def ADD(self, parameter=None):
+		""""
+			ADD a file to an image
+		"""
 		if parameter is None:
 			raise Exception("No parameter given")
 		file_name, target_dir =parameter.split()
@@ -68,6 +75,9 @@ class Redomat:
 		self.client.commit(container=name, repository=self.current_image)
 
 	def WORKDIR(self, directory=None):
+		"""
+			set a WORKDIR for an image
+		"""
 		if directory is None:
 			raise Exception("No directory given")
 		name = "%s-%s-%s"%(self.build_id, self.current_stage, self._nextseq())

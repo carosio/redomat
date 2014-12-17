@@ -16,17 +16,20 @@ def xml_parser(xml_file):
 		stages.append(stage)
 
 		for stage_command in buildstage.iter():
+			if stage_command.tag == 'prestage':
+				stage['dockerlines'].append("FROM " + stage_command.text)
 
-			if stage_command.tag == 'dockerline':
-				stage['dockerlines'].append(stage_command.text)
-
-			if stage_command.tag == 'bitbake_target':
+			elif stage_command.tag == 'bitbake_target':
 				stage['dockerlines'].append('RUN bitbake ')
 				if stage_command.get('command'):
 					stage['dockerlines'].append(stage['dockerlines'].pop() + '-c ' + stage_command.get('command'))
 					stage['dockerlines'].append(stage['dockerlines'].pop() + " " + stage_command.text)
 				else:
 					stage['dockerlines'].append(stage['dockerlines'].pop() + stage_command.text)
+
+			elif stage_command.tag == 'dockerline':
+				stage['dockerlines'].append(stage_command.text)
+
 	return stages
 
 def data_parser(docker_line, redo):
@@ -49,6 +52,7 @@ for dockerfile in sys.argv[1:]:
 
 	for stage in stages:
 		print(stage['id'])
+		redo.current_stage = stage['id']
 		for line in stage['dockerlines']:
 			print(line)
 			data_parser(line, redo)

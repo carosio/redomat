@@ -115,7 +115,7 @@ class Redomat:
 		if directory is None:
 			raise Exception("No directory given")
 		name = "%s-%s-%s"%(self.build_id, self.current_stage, self._nextseq())
-		self.client.create_container(image=self.current_image, name=name, working_dir=dircetory)
+		self.client.create_container(image=self.current_image, name=name, working_dir=directory)
 
 		if self.client.wait(container=name) is not 0:
 			raise Exception("Container " + name + " exited with a non zero exit status")

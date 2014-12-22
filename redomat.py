@@ -11,7 +11,7 @@ from redomatfunctions import XML_parser
 
 def main(argv):
 	try:
-		opts, args = getopt.getopt(argv,"hs:")
+		opts, args = getopt.getopt(argv,"hs:",["images"])
 	except getopt.GetoptError:
 		print("redomat <option> <redomat.xml>\n\t-h\t\tprint this help\n\t-s <STAGE>\tstart building from STAGE")
 		sys.exit(1)
@@ -30,6 +30,10 @@ def main(argv):
 			start_point=arg
 			build_id=args[0]
 			build=False
+		elif opt == '--images':
+			for x in docker.Client(base_url='unix://var/run/docker.sock',version='0.6.0').images(name=str('*'+os.getenv('LOGNAME')+'*')):
+				print(x['Repository'])
+			sys.exit()
 
 	for dockerfile in dockerfiles:
 		if os.path.exists(dockerfile) is False:

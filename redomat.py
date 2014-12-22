@@ -26,8 +26,9 @@ def main(argv):
 			sys.exit()
 		elif opt == '-s':
 			print("using -s")
-			dockerfiles=args
+			dockerfiles=args[1:]
 			start_point=arg
+			build_id=args[0]
 			build=False
 
 	for dockerfile in dockerfiles:
@@ -54,7 +55,10 @@ def main(argv):
 				if stage['build']:
 					print(line)
 					redo.data_parser(line)
+				elif 'FROM' in line:
+					redo.current_image=build_id + "-" + stage['id']
 			redo.laststage = redo.current_image
+			print("laststage: " + redo.laststage)
 			print("done building: " + stage['id'])
 
 if __name__ == "__main__":

@@ -39,13 +39,16 @@ class Redomat:
 		"""
 		if image is None:
 			raise Exception("no image given to work with")
+		elif 'laststage' in image:
+		 	print("picking up build from lasstage: " + self.laststage)
+			image = self.laststage
 
 		self.current_image="%s-%s-%s"%(time.strftime("%F-%H%M%S"), os.getenv('LOGNAME'), self.current_stage)
 		try:
 			self.client.tag(image,self.current_image)
 		except:
-			image, image_tag = image.split(":")
 			print("pulling: " + image + ":" + image_tag)
+			image, image_tag = image.split(":")
 			self.client.pull(repository=image,tag=image_tag)
 			self.client.tag(image + ":" + image_tag,self.current_image)
 
@@ -172,7 +175,7 @@ class XML_parser:
 
 			for stage_command in buildstage.iter():
 				if stage_command.tag == 'prestage':
-					stage['dockerlines'].append("FROM " + redomat.laststage)
+					stage['dockerlines'].append("FROM laststage")
 
 				elif stage_command.tag == 'bitbake_target':
 					stage['dockerlines'].append('RUN bitbake ')

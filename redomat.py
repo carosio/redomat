@@ -43,7 +43,7 @@ def main(argv):
 		redo = Redomat(docker.Client(base_url='unix://var/run/docker.sock',version='0.6.0'))
 
 		stages=XML_parser(dockerfile).parse(redo)
-		XML_creator(dockerfile).create_repoxml("repo-" + dockerfile)
+		XML_creator(dockerfile).create_repoxml("init-repo/repo-" + dockerfile)
 
 		for stage in stages:
 			if stage['id'] == start_point:

@@ -135,8 +135,8 @@ class XML_creator:
 		if out_name is None:
 			raise Exception("no output file name given")
 
-		if os.path.exists(out_name):
-			raise Exception(out_name + "file already exists")
+#		if os.path.exists(out_name):
+#			raise Exception(out_name + "file already exists")
 
 		repo_xml_root = XML.Element("manifest")
 
@@ -144,13 +144,21 @@ class XML_creator:
 			for repo_line in layer_declaration.iter().next():
 				if repo_line.tag == 'layer':
 					repo_xml = XML.SubElement(repo_xml_root, 'project')
+					for attribute, value in repo_line.attrib.iteritems():
+						if 'path' in attribute:
+							repo_xml.set('path', value)
+						if 'reponame' in attribute:
+							repo_xml.set('name', value)
+						else:
+							repo_xml.set(attribute, value)
+
 				else:
 					repo_xml = XML.SubElement(repo_xml_root, repo_line.tag)
-				for attribute, value in repo_line.attrib.iteritems():
-					repo_xml.set(attribute, value)
+					for attribute, value in repo_line.attrib.iteritems():
+						repo_xml.set(attribute, value)
 
 		tree = XML.ElementTree(repo_xml_root)
-		tree.write(out_name)
+		tree.write(out_name, xml_declaration=True)
 
 class XML_parser:
 	def __init__(self, xml_file=None):
@@ -188,6 +196,7 @@ class XML_parser:
 				elif stage_command.tag == 'dockerline':
 					stage['dockerlines'].append(stage_command.text)
 
+				elif stage_command.tag == 'oe-init-build-env':
+					stage['dockerlines'].append('RUN . /TP/source/poky/oe-init-build-env /TP/build')
+
 		return self.stages
-
-

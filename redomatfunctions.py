@@ -192,7 +192,7 @@ class XML_creator:
 				if repo_line.tag == 'layer':
 					for attribute, value in repo_line.attrib.iteritems():
 						if 'path' in attribute:
-							if 'poky' not in value:
+							if value!='poky':
 								bblayers.write("/TP/source/" + value + ' \ \n')
 
 		bblayers.write('"')
@@ -226,6 +226,7 @@ class XML_parser:
 					stage['dockerlines'].append("FROM laststage")
 
 				elif stage_command.tag == 'bitbake_target':
+					stage['dockerlines'].append('RUN touch /TP/build/conf/sanity.conf')
 					stage['dockerlines'].append('RUN /bin/bash -c "source /TP/source/poky/oe-init-build-env /TP/build')
 					stage['dockerlines'].append(stage['dockerlines'].pop() + ' && bitbake ')
 					if stage_command.get('command'):

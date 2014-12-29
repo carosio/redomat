@@ -43,7 +43,7 @@ class Redomat:
 		 	print("picking up build from lasstage: " + self.laststage)
 			image = self.laststage
 
-		self.current_image="%s-%s-%s"%(time.strftime("%F-%H%M%S"), os.getenv('LOGNAME'), self.current_stage)
+		self.current_image="%s-%s"%(self.build_id, self.current_stage)
 		try:
 			self.client.tag(image,self.current_image)
 		except:
@@ -121,6 +121,19 @@ class Redomat:
 			raise Exception("Container " + name + " exited with a non zero exit status")
 		self.client.commit(container=name, repository=self.current_image)
 
+	def ENTRYPOINT(self, cmd=None):
+		"""
+			set entrypoint of image
+		"""
+		if self.client is None:
+			raise Exception("No client given to work with")
+		if cmd is None:
+			raise Exception("RUN needs atleast one comman")
+
+		name = "%s-%s-%s"%(self.build_id, self.current_stage, self._nextseq())
+		self.client.create_container(image=self.current_image, name=name, command=cmd)
+		self.client.commit(container=name, repository=self.current_image)
+
 class XML_creator:
 	def __init__(self, xml_file=None):
 		if xml_file is None:
@@ -160,6 +173,33 @@ class XML_creator:
 		tree = XML.ElementTree(repo_xml_root)
 		tree.write(out_name, xml_declaration=True)
 
+	def create_bblayers(self, out_name=None):
+		if out_name is None:
+			raise Exception("no output file name given")
+
+		if os.path.exists(out_name):
+			os.remove(out_name)
+
+		bblayers = open(out_name, 'a')
+		bb_tamplate = open('default_bblayers', 'r')
+
+		for line in bb_tamplate:
+			bblayers.write(line)
+		bb_tamplate.close()
+
+		for layer_declaration in self.manifest_root.iter('layer_declaration'):
+			for repo_line in layer_declaration.iter().next():
+				if repo_line.tag == 'layer':
+					for attribute, value in repo_line.attrib.iteritems():
+						if 'path' in attribute:
+							if 'poky' not in value:
+								bblayers.write("/TP/source/" + value + ' \ \n')
+
+		bblayers.write('"')
+		bblayers.close()
+		if bblayers.closed is False:
+			raise Exception("Something went wrong while closing the bblayers file")
+
 class XML_parser:
 	def __init__(self, xml_file=None):
 		if xml_file is None:
@@ -186,17 +226,15 @@ class XML_parser:
 					stage['dockerlines'].append("FROM laststage")
 
 				elif stage_command.tag == 'bitbake_target':
-					stage['dockerlines'].append('RUN bitbake ')
+					stage['dockerlines'].append('RUN /bin/bash -c "source /TP/source/poky/oe-init-build-env /TP/build')
+					stage['dockerlines'].append(stage['dockerlines'].pop() + ' && bitbake ')
 					if stage_command.get('command'):
 						stage['dockerlines'].append(stage['dockerlines'].pop() + '-c ' + stage_command.get('command'))
-						stage['dockerlines'].append(stage['dockerlines'].pop() + " " + stage_command.text)
+						stage['dockerlines'].append(stage['dockerlines'].pop() + " " + stage_command.text + '"')
 					else:
-						stage['dockerlines'].append(stage['dockerlines'].pop() + stage_command.text)
+						stage['dockerlines'].append(stage['dockerlines'].pop() + stage_command.text + '"')
 
 				elif stage_command.tag == 'dockerline':
 					stage['dockerlines'].append(stage_command.text)
-
-				elif stage_command.tag == 'oe-init-build-env':
-					stage['dockerlines'].append('RUN . /TP/source/poky/oe-init-build-env /TP/build')
 
 		return self.stages

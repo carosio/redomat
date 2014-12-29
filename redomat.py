@@ -22,7 +22,7 @@ def main(argv):
 
 	for opt, arg in opts:
 		if opt == '-h':
-			print("redomat <option> <redomat.xml>\n\t-h\t\tprint this help\n\t-s <STAGE>\tstart building from STAGE")
+			print("redomat <option> <redomat.xml>\n\t-h\t\tprint this help\n\t-s <STAGE> <BUILD_ID> <redomat.xml>\tstart building from STAGE")
 			sys.exit()
 		elif opt == '-s':
 			print("using -s")
@@ -55,6 +55,9 @@ def main(argv):
 			print(stage['id'])
 			print(stage['build'])
 			redo.current_stage = stage['id']
+
+			XML_creator(dockerfile).create_bblayers(stage['id'] + "/bblayers.conf")
+
 			for line in stage['dockerlines']:
 				if stage['build']:
 					print(line)

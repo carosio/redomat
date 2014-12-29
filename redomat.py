@@ -40,7 +40,7 @@ def main(argv):
 			raise Exception("No Dockerfile found")
 			sys.exit(1)
 
-		redo = Redomat(docker.Client(base_url='unix://var/run/docker.sock',version='0.6.0'))
+		redo = Redomat(docker.Client(base_url='unix://var/run/docker.sock',version='0.6.0',timeout=2400))
 
 		stages=XML_parser(dockerfile).parse(redo)
 		XML_creator(dockerfile).create_repoxml("init-repo/repo-" + dockerfile)
@@ -53,7 +53,7 @@ def main(argv):
 
 		for stage in stages:
 			print(stage['id'])
-			print(stage['build'])
+			print("build this stage: " + str(stage['build']))
 			redo.current_stage = stage['id']
 
 			XML_creator(dockerfile).create_bblayers(stage['id'] + "/bblayers.conf")
@@ -64,6 +64,7 @@ def main(argv):
 					redo.data_parser(line)
 				elif 'FROM' in line:
 					redo.current_image=build_id + "-" + stage['id']
+					redo.client.tag(image=redo.current_image, repository=redo.build_id + "-" + stage['id'])
 			redo.laststage = redo.current_image
 			print("laststage: " + redo.laststage)
 			print("done building: " + stage['id'])

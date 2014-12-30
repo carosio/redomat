@@ -48,6 +48,10 @@ def main(argv):
 
         # parse the xml-file pased as a parameter and write the resolving list in the stages variable
         stages=XML_parser(dockerfile).parse(redo)
+
+        # see if there is a init-repo directory if not create one
+        if not os.path.exists('init-repo'):
+            os.makedirs('init-repo')
         # create a xml-file for the repo tool
         XML_creator(dockerfile).create_repoxml("init-repo/repo-" + dockerfile)
 

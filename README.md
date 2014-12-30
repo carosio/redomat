@@ -60,7 +60,7 @@ In this buildstage decleration there are three possible decleration:
 ####to declerate local.conf:
 ```
   <local_conf>
-  </ local_conf>
+  </local_conf>
 ```
 
 ```

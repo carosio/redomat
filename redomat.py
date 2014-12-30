@@ -4,7 +4,6 @@ import docker
 import sys
 import os
 import getopt
-import xml.etree.ElementTree as XML
 from redomatfunctions import Redomat
 from redomatfunctions import XML_creator
 from redomatfunctions import XML_parser
@@ -70,6 +69,7 @@ def main(argv):
 
             #create the bblayers.conf according to the layers specefied in the  redomat.xml
             XML_creator(dockerfile).create_bblayers(stage['id'] + "/bblayers.conf")
+            XML_creator(dockerfile).create_local(stage['id'] + "/local.conf")
 
             #iterate over all the elements in the list dockerlines of the dictionary stage
             for line in stage['dockerlines']:

@@ -119,10 +119,6 @@ class Redomat:
         #check if parameters are passed correctly
         if parameter is None:
             raise Exception("No parameter given")
-        if file_name is None:
-            raise Exception("No filename given")
-        if target is None:
-            raise Exception("No target directory given")
 
         #split filename and target
         file_name, target =parameter.split()
@@ -130,6 +126,10 @@ class Redomat:
         file_name=self.current_stage + "/" + file_name
 
         #check if the file exists
+        if target is None:
+            raise Exception("No target directory given")
+        if file_name is None:
+            raise Exception("No filename given")
         if os.path.exists(file_name) is False:
             raise Exception("No such file: " + file_name)
 
@@ -288,12 +288,15 @@ class XML_creator:
             function used to crate the bblayers.conf for bitbake
             the out put file name must be passed
         """
+        # check if parameters are passed correctly
         if out_name is None:
             raise Exception("no output file name given")
 
+        # if the passed file exists remove it
         if os.path.exists(out_name):
             os.remove(out_name)
 
+        # write the default file in the local_conf file
         local_conf = open(out_name, 'a')
         local_tamplate = open('default_local', 'r')
 
@@ -301,10 +304,12 @@ class XML_creator:
             local_conf.write(line)
         local_tamplate.close()
 
+        # read all local_conf section from the redomat.xml and write it to a local.conf file
         for local_declaration in self.manifest_root.iter('local_conf'):
             for local_line in local_declaration.iter().next():
-                local_conf.write(local_line.tag + '"' + local_line.value + '"\n')
+                local_conf.write(local_line.tag + '="' + local_line.text + '"\n')
 
+        # close the local_conf file and check rather it is closed correctly
         local_conf.close()
         if local_conf.closed is False:
             raise Exception("Something went wrong while closing the local.conf")

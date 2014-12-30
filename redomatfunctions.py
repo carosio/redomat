@@ -209,6 +209,7 @@ class XML_creator:
             create xml files that can be used by a variety of tools needed for the redomat
             * repo tool
             * bitbakes bblayer.conf
+            * bitbakes local.conf
         """
         if xml_file is None:
             raise Exception("no xml file name given")
@@ -281,6 +282,32 @@ class XML_creator:
         bblayers.close()
         if bblayers.closed is False:
             raise Exception("Something went wrong while closing the bblayers file")
+
+    def create_local(self, out_name=None):
+        """
+            function used to crate the bblayers.conf for bitbake
+            the out put file name must be passed
+        """
+        if out_name is None:
+            raise Exception("no output file name given")
+
+        if os.path.exists(out_name):
+            os.remove(out_name)
+
+        local_conf = open(out_name, 'a')
+        local_tamplate = open('default_local', 'r')
+
+        for line in local_tamplate:
+            local_conf.write(line)
+        local_tamplate.close()
+
+        for local_declaration in self.manifest_root.iter('local_conf'):
+            for local_line in local_declaration.iter().next():
+                local_conf.write(local_line.tag + '"' + local_line.value + '"\n')
+
+        local_conf.close()
+        if local_conf.closed is False:
+            raise Exception("Something went wrong while closing the local.conf")
 
 class XML_parser:
     def __init__(self, xml_file=None):

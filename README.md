@@ -52,8 +52,8 @@ In the layer declaration there are to knotes to declerate:
 
 In this buildstage decleration there are three possible decleration:
 ```
-  <prestage> STAGE_NAME </ prestage>
-  <dockerline> DOCKERFILE COMMAND </ dockerline>
+  <prestage> STAGE_NAME </prestage>
+  <dockerline> DOCKERFILE COMMAND </dockerline>
   <bitbake_target command="BITBAKE COMMAND"> BITBAKE_TARGET </bitbake_target> 
 ```
 
@@ -64,8 +64,8 @@ In this buildstage decleration there are three possible decleration:
 ```
 
 ```
-  <BB_NUMBER_THREADS>8</ BB_NUMBER_THREADS>
-  <PARALLEL_MAKE>-j 8</ PARALLEL_MAKE>
-  <MACHINE>vmware</ MACHINE>
-  <DISTRO>tposs</ DISTRO>
+  <BB_NUMBER_THREADS>NUMBER OF CPU CORES</BB_NUMBER_THREADS>
+  <PARALLEL_MAKE>NUMBER OF MAKE THEADS</PARALLEL_MAKE>
+  <MACHINE>MACHINE</MACHINE>
+  <DISTRO>DISTRO</DISTRO>
 ```

@@ -61,7 +61,11 @@ class XML_creator:
 
         # convert the xml root to a xml tree
         tree = XML.ElementTree(repo_xml_root)
-        # write the xml tree to a file
+        # see if directory exists if not create
+        directory=os.path.dirname(os.path.abspath(out_name))
+        if not directory:
+            os.makedirs(directory)
+        # write the xml tree to a file 
         tree.write(out_name, xml_declaration=True)
 
     def create_bblayers(self, out_name=None):
@@ -101,6 +105,11 @@ class XML_creator:
         # add closing '"'
         bblayers.write('"')
 
+        # see if directory exists if not create
+        directory=os.path.dirname(os.path.abspath(out_name))
+        if not directory:
+            os.makedirs(directory)
+
         # close the file and check if it closes correctly
         bblayers.close()
         if bblayers.closed is False:
@@ -135,6 +144,11 @@ class XML_creator:
         for local_declaration in self.manifest_root.iter('local_conf'):
             for local_line in local_declaration.iter().next():
                 local_conf.write(local_line.tag + '="' + local_line.text + '"\n')
+
+        # see if directory exists if not create
+        directory=os.path.dirname(os.path.abspath(out_name))
+        if not directory:
+            os.makedirs(directory)
 
         # close the local_conf file and check if it is closed correctly
         local_conf.close()

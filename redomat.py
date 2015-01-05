@@ -4,8 +4,8 @@ import sys
 import os
 import getopt
 from redomatfunctions import Redomat
-from redomatfunctions import XML_creator
-from redomatfunctions import XML_parser
+from redomatfunctions.XML_creator import XML_creator
+from redomatfunctions.XML_parser import XML_parser
 
 def main(argv):
     # evaluate passed flags

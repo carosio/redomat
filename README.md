@@ -5,18 +5,24 @@
 * docker [homepage](www.docker.com)
 * python
 
+###How to install
+To install the redomat use the setup.py:
+```
+python setup.py install
+```
+
 ###How to use
 To use Redomat to build a reference tposs, execute:
 
 ```
-python redomat.py <REDOMAT.XML>
+redomat.py <REDOMAT.XML>
 ```
 Setting the stage from which to start from is not a requirement.
 
 Once all stages are build you have the option to start building from a different stage, passing the stage to build from and the build-id:
 
 ```
-python redomat.py -s <STAGE> <BUILS-ID> <REDOMAT.XML>
+redomat.py -s <STAGE> <BUILS-ID> <REDOMAT.XML>
 ```
 
 ###How to serve build artifacts

@@ -1,5 +1,21 @@
 # Redomat -- Environment for reproducable building, integration, testing
 
+###SYNOPSIS
+
+Redomat is a tool which provides an environment for doing reproducable
+builds, integration and testing of targets. A target usually is a
+Linux based system designed for a special purpose.
+
+Reproducability is achieved by employing Docker (including its Python-API
+and GIT (including repo-tool), and Yocto for actually building.
+The target specification is provided as XML file which may reference 
+additional files. The declaration may define build-stages (like build 
+milestones) which will be accessible as docker-commits/images.
+Using a certain milestone when building makes sense for 
+software-development to spare the time of a full rebuild but still have 
+the same effect.
+
+
 ###DEPENDENCIES
 * docker-py [github](https://github.com/docker/docker-py)
 * docker [homepage](www.docker.com)
@@ -12,66 +28,71 @@ python setup.py install
 ```
 
 ###How to use
-To use Redomat to build a reference tposs, execute:
+To use Redomat to build a target from a declaration, execute:
 
 ```
 redomat.py <REDOMAT.XML>
 ```
-Setting the stage from which to start from is not a requirement.
 
-Once all stages are build you have the option to start building from a different stage, passing the stage to build from and the build-id:
+Optionally you can specify a stage/milestone from a previous
+build (BUILDID) as a starting point for the build:
 
 ```
-redomat.py -s <STAGE> <BUILS-ID> <REDOMAT.XML>
+redomat.py -s <STAGE> <BUILDID> <REDOMAT.XML>
 ```
 
 ###How to serve build artifacts
 
-To use the serve.sh script use this command:
+The result of a build is what we call build artifacts. Build
+artifacts can be build logs, filesystem images, packages and
+more. It is possible to serve these build artifacts via the
+Docker container used for building:
 
 ```
 docker run --rm -ti -d -p <hostport>:80 <IMAGE> /build/serve.sh
+redomat.py --serve <BUILDID>
 ```
 
-to make the repositories accessible on `http://localhost:<hostport>`
+This will make the build artifacts accessible on `http://localhost:<hostport>`
 
 ###REDOMAT.XML reference guide
 
-####To declerate the Repo-tool xml in the Redomat.xml open up the section:
+####To declare the Yocto layers 
+
+Redomat uses repo-tool to checkout respective GIT revisions of different 
+repositories, to form the used Yocto layers. The redomat XML nodes for this
+are very similar to repo-tool XML-syntax:
 ```
   <layer_declaration>
-    REPO AND LAYER DECLERATION
+    <remote fetch="REPO_URL" name="REPO_NAME" />
+    <layer remote="REMOTE_NAME" revision="REPO_REVISION" reponame="REPO_URL" />
+    <layer remote="REMOTE_NAME" revision="REPO_REVISION" reponame="REPO_URL" />
+    <layer remote="REMOTE_NAME" revision="REPO_REVISION" reponame="REPO_URL" />
   </layer_declaration>
 ```
 
-In the layer declaration there are to knotes to declerate:
-```
-  <remote fetch="REPO_URL" name="REPO_NAME" />
-  <layer path="BBLAYER_PATH" remote="REMOTE_NAME" revision="REPO_REVISION" reponame="REPO_URL" />
-```
+A bblayers.conf will be automatically generated from the declaration.
 
-####To declerate build stages use:
+####To declare build stages use:
 ```
   <buildstage id='STAGE_NAME'>
+    <prestage> STAGE_NAME </prestage>
+    <dockerline> DOCKERFILE COMMAND </dockerline>
+    <bitbake_target command="BITBAKE COMMAND"> BITBAKE_TARGET </bitbake_target> 
   <buildstage>
 ```
 
-In this buildstage decleration there are three possible decleration:
-```
-  <prestage> STAGE_NAME </prestage>
-  <dockerline> DOCKERFILE COMMAND </dockerline>
-  <bitbake_target command="BITBAKE COMMAND"> BITBAKE_TARGET </bitbake_target> 
-```
+####to declare additional configuration:
 
-####to declerate local.conf:
+Additional configuration can be put in the <local_conf> node
+and will end up in a generated local.conf.
+
 ```
   <local_conf>
+    <BB_NUMBER_THREADS>NUMBER OF CPU CORES</BB_NUMBER_THREADS>
+    <PARALLEL_MAKE>NUMBER OF MAKE THEADS</PARALLEL_MAKE>
+    <MACHINE>MACHINE</MACHINE>
+    <DISTRO>DISTRO</DISTRO>
   </local_conf>
 ```
 
-```
-  <BB_NUMBER_THREADS>NUMBER OF CPU CORES</BB_NUMBER_THREADS>
-  <PARALLEL_MAKE>NUMBER OF MAKE THEADS</PARALLEL_MAKE>
-  <MACHINE>MACHINE</MACHINE>
-  <DISTRO>DISTRO</DISTRO>
-```

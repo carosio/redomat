@@ -1,6 +1,6 @@
 # Redomat -- Environment for reproducable building, integration, testing
 
-###SYNOPSIS
+## SYNOPSIS
 
 Redomat is a tool which provides an environment for doing reproducable
 builds, integration and testing of targets. A target usually is a
@@ -16,18 +16,18 @@ software-development to spare the time of a full rebuild but still have
 the same effect.
 
 
-###DEPENDENCIES
+## DEPENDENCIES
 * docker-py [github](https://github.com/docker/docker-py)
 * docker [homepage](www.docker.com)
 * python
 
-###How to install
+## How to install
 To install the redomat use the setup.py:
 ```
 python setup.py install
 ```
 
-###How to use
+## How to use
 To use Redomat to build a target from a declaration, execute:
 
 ```
@@ -41,7 +41,7 @@ build (BUILDID) as a starting point for the build:
 redomat.py -s <STAGE> <BUILDID> <REDOMAT.XML>
 ```
 
-###How to serve build artifacts
+## How to serve build artifacts
 
 The result of a build is what we call build artifacts. Build
 artifacts can be build logs, filesystem images, packages and
@@ -55,9 +55,9 @@ redomat.py --serve <BUILDID>
 
 This will make the build artifacts accessible on `http://localhost:<hostport>`
 
-###REDOMAT.XML reference guide
+## REDOMAT.XML reference guide
 
-####To declare the Yocto layers 
+### To declare the Yocto layers 
 
 Redomat uses repo-tool to checkout respective GIT revisions of different 
 repositories, to form the used Yocto layers. The redomat XML nodes for this
@@ -73,7 +73,7 @@ are very similar to repo-tool XML-syntax:
 
 A bblayers.conf will be automatically generated from the declaration.
 
-####To declare build stages use:
+### To declare build stages use:
 ```
   <buildstage id='STAGE_NAME'>
     <prestage> STAGE_NAME </prestage>
@@ -82,7 +82,7 @@ A bblayers.conf will be automatically generated from the declaration.
   <buildstage>
 ```
 
-####to declare additional configuration:
+### to declare additional configuration:
 
 Additional configuration can be put in the <local_conf> node
 and will end up in a generated local.conf.

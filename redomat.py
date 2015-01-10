@@ -7,39 +7,51 @@ from redomatfunctions import Redomat
 from redomatfunctions.XML_creator import XML_creator
 from redomatfunctions.XML_parser import XML_parser
 
+def usage():
+    return """
+redomat <option> <redomat.xml>
+    -h, --help
+        print this help
+
+    -s, --stage=STAGE
+        start building from STAGE
+
+"""
+
 def main(argv):
     # evaluate passed flags
     try:
-        opts, args = getopt.getopt(argv,"hs:",["images"])
-    except getopt.GetoptError:
-        print("redomat <option> <redomat.xml>\n\t-h\t\tprint this help\n\t-s <STAGE>\tstart building from STAGE")
+        opts, args = getopt.getopt(argv,"his:",["help", "images", "stage="])
+    except getopt.GetoptError, e:
+        print(e)
+        print(usage())
         sys.exit(1)
 
     start_point=None
     build=True
-    dockerfiles=args
+    declarations=args
 
     for opt, arg in opts:
         # print help when -h is passed
-        if opt == '-h':
-            print("redomat <option> <redomat.xml>\n\t-h\t\tprint this help\n\t-s <STAGE> <BUILD_ID> <redomat.xml>\tstart building from STAGE")
-            sys.exit()
+        if opt in ['-h', '--help']:
+            print(usage())
+            sys.exit(0)
         # use the -s flag to Start from a different stage
-        elif opt == '-s':
+        elif opt in ['-s', '--stage']:
             print("using -s")
-            dockerfiles=args[1:]
+            declarations=args[1:]
             start_point=arg
             build_id=args[0]
             build=False
         # use the --images flag to print all images that have your username in the build id
-        elif opt == '--images':
+        elif opt in ['-i', '--images']:
             for image in docker.Client(base_url='unix://var/run/docker.sock',version='0.6.0').images(name=str('*'+os.getenv('LOGNAME')+'*')):
                 print(image['Repository'])
-            sys.exit()
+            sys.exit(0)
 
-    for dockerfile in dockerfiles:
+    for declaration in declarations:
         # check if the xml-file exists
-        if os.path.exists(dockerfile) is False:
+        if os.path.exists(declaration) is False:
             raise Exception("No Dockerfile found")
             sys.exit(1)
 
@@ -92,3 +104,5 @@ def main(argv):
 
 if __name__ == "__main__":
     main(sys.argv[1:])
+
+# vim:expandtab:ts=4

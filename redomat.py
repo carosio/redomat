@@ -21,7 +21,7 @@ redomat <option> <redomat.xml>
 def main(argv):
     # evaluate passed flags
     try:
-        opts, args = getopt.getopt(argv,"his:",["help", "images", "stage="])
+        opts, args = getopt.getopt(argv,"his:b:",["help", "images", "stage=", "buildid="])
     except getopt.GetoptError, e:
         print(e)
         print(usage())
@@ -31,17 +31,19 @@ def main(argv):
     build=True
     declarations=args
 
+    build_opts = {}
+
     for opt, arg in opts:
         # print help when -h is passed
         if opt in ['-h', '--help']:
             print(usage())
             sys.exit(0)
-        # use the -s flag to Start from a different stage
+        elif opt in ['-b', '--buildid']:
+            build_opts['buildid'] = arg
         elif opt in ['-s', '--stage']:
             print("using -s")
             declarations=args[1:]
             start_point=arg
-            build_id=args[0]
             build=False
         # use the --images flag to print all images that have your username in the build id
         elif opt in ['-i', '--images']:

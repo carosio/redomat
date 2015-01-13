@@ -41,12 +41,11 @@ def main(argv):
         elif opt in ['-b', '--buildid']:
             build_opts['buildid'] = arg
         elif opt in ['-s', '--stage']:
-            print("using -s")
             declarations=args[1:]
-            start_point=arg
-            build=False
-        # use the --images flag to print all images that have your username in the build id
+            build_opts["start_point"]=arg
+            print("going for start-stage [%s]."%build_opts["start_point"])
         elif opt in ['-i', '--images']:
+            # print all images that have your username in the build id
             for image in docker.Client(base_url='unix://var/run/docker.sock',version='0.6.0').images(name=str('*'+os.getenv('LOGNAME')+'*')):
                 print(image['Repository'])
             sys.exit(0)

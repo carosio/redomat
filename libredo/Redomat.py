@@ -11,21 +11,35 @@ class Redomat:
         """
         self.service_url = service_url
         self.service_version = "0.6.0"
+        self.dclient = docker.Client(base_url=self.service_url,version=self.service_version,timeout=2400)
+
         # stage that is build
         self.current_stage = "undefined"
         # current image name that is processed
         self.current_image = "undefined"
+
         # last stage that was build
         self.laststage = "undefined"
         # prestage specified in the redomat.xml
         self.prestage = "undefined"
+
         # unique build id
         self.build_id = "%s-%s"%(time.strftime("%F-%H%M%S"), os.getenv('LOGNAME'))
         # counter for container so the id's don't collide
         self.run_sequence = 0
+
+        # flag for image search-operation and selection
+        # (allow other user's images as candidates)
         self.include_foreigns = False
 
-        self.dclient = docker.Client(base_url=self.service_url,version=self.service_version,timeout=2400)
+        self.exposed_docker_commands = set(['FROM', 'RUN', 'ADD', 'WORKDIR', 'ENTRYPOINT'])
+
+    def allow_foreign_images(self, flag):
+        """
+            set flag to True/False to enable/disable images
+            from other users as candidates for prestages
+        """
+        self.include_foreigns = True
 
     def find_images(self):
         if self.include_foreigns:
@@ -46,13 +60,19 @@ class Redomat:
             yield image
 
     def data_parser(self, docker_line):
+        # FIXME: bad wording: a parser should not execute
         """
             map redomat lines to the functions of the redomat
+            (and also execute them)
         """
         # split the callback function from the parameters
         docker_command = docker_line.split(" ")
 
-        # raise exception if there is no function in the redomat with that name
+        # better check if the command is part of what we want to expose
+        if not docker_command[0] in self.exposed_docker_commands:
+            raise Exception("unsupported command <%s>"%docker_command[0])
+
+        # raise exception if there is no matching function
         if not hasattr(self, docker_command[0]):
             raise Exception("unknown command <%s>"%docker_command[0])
         callback = getattr(self, docker_command[0])
@@ -69,7 +89,9 @@ class Redomat:
 
     def FROM(self, image):
         """
-            tag an image to begin from
+            The FROM line has to be present in entry-stages
+            without prestages. This is the verbatim image specifier
+            used by docker to start the first stage.
         """
 
         # check if the image contains laststage

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<redo>
+
+	<layer_declaration>
+		<remote fetch="git://github.com/travelping" name="github" />
+		<layer remote="github" revision="deadbeef" reponame="hello_world.git" />
+	</layer_declaration>
+
+    <local_conf>
+        <BB_NUMBER_THREADS>8</BB_NUMBER_THREADS>
+        <PARALLEL_MAKE>-j 8</PARALLEL_MAKE>
+        <MACHINE>vmware</MACHINE>
+        <DISTRO>helloworld</DISTRO>
+    </local_conf>
+
+	<buildstage id="001-ubuntu">
+		<dockerline>FROM ubuntu:14.04</dockerline>
+		<dockerline>RUN apt-get update</dockerline>
+		<dockerline>RUN apt-get install -y gawk wget git-core diffstat unzip texinfo gcc-multilib build-essential chrpath libsdl1.2-dev vim sudo curl webfs</dockerline>
+		<dockerline>RUN mkdir /REDO</dockerline>
+		<dockerline>RUN mkdir /REDO/build</dockerline>
+		<dockerline>RUN mkdir /REDO/source</dockerline>
+		<!-- FIXME actually redomat should do this kind of preparation without any need for declaration -->
+	</buildstage>
+
+	<buildstage id="002-hello-world">
+		<prestage>001-ubuntu</prestage>
+		<dockerline>WORKDIR /REDO/source</dockerline>
+		<dockerline>ADD hello-world.txt /REDO/source/hello-world.txt</dockerline>
+		<dockerline>RUN cp -v hello-world.txt foobar.txt</dockerline>
+	</buildstage>
+
+</redo>

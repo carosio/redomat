@@ -52,19 +52,19 @@ class Declaration:
                 elif stage_command.tag == 'bitbake_target':
                     # add some needed lines before running the bitbake command
                     ## touch sanity-conf so bitbake will build as root 
-                    stage['dockerlines'].append('RUN touch /REDO/build/conf/sanity.conf')
+                    stage['actions'].append('RUN touch /REDO/build/conf/sanity.conf')
                     ## source oe-init-build-env to setup the environment for bitbake
-                    stage['dockerlines'].append('RUN /bin/bash -c "source /REDO/source/poky/oe-init-build-env /REDO/build && bitbake')
+                    stage['actions'].append('RUN /bin/bash -c "source /REDO/source/poky/oe-init-build-env /REDO/build && bitbake')
                     ## check if the bitbake_target knot has a command specified
                     if stage_command.get('command'):
                         # add the command with the -c flag to the bitbake command
-                        stage['dockerlines'].append(stage['dockerlines'].pop() + ' -c ' + stage_command.get('command'))
+                        stage['actions'].append(stage['actions'].pop() + ' -c ' + stage_command.get('command'))
                     ## add the bitbake target and the closing apostrophe 
-                    stage['dockerlines'].append(stage['dockerlines'].pop() + " " + stage_command.text + '"')
+                    stage['actions'].append(stage['actions'].pop() + " " + stage_command.text + '"')
 
                 # evaluate a dockerline by passing it 1:1
-                elif stage_command.tag == 'dockerline':
-                    stage['dockerlines'].append(stage_command.text)
+                elif stage_command.tag == 'action':
+                    stage['actions'].append(stage_command.text)
             return stages
 
     def stages(self):

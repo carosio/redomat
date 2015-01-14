@@ -69,7 +69,7 @@ def main(argv):
         if not os.path.exists(declaration):
             raise Exception("declaration [%s] not found."%declaration)
             sys.exit(1)
-        decl.parse(dockerfile)
+        decl.parse(declaration)
 
     stages = decl.stages()
 
@@ -77,7 +77,7 @@ def main(argv):
     if not os.path.exists('init-repo'):
         os.makedirs('init-repo')
     # create a xml-file for the repo tool
-    XML_creator(dockerfile).create_repoxml("init-repo/repo-" + dockerfile)
+    XML_creator(declaration).create_repoxml("init-repo/repo-" + declaration)
 
     # iterate over the list of stages and pass the relevant lines to the redomat
     for stage in stages:
@@ -88,8 +88,8 @@ def main(argv):
         redo.prestage = stage['prestage']
 
         # create the bblayers.conf according to the layers specefied in the  redomat.xml
-        XML_creator(dockerfile).create_bblayers(stage['id'] + "/bblayers.conf")
-        XML_creator(dockerfile).create_local(stage['id'] + "/local.conf")
+        XML_creator(declaration).create_bblayers(stage['id'] + "/bblayers.conf")
+        XML_creator(declaration).create_local(stage['id'] + "/local.conf")
 
         # iterate over all the elements in the list dockerlines of the dictionary stage
         for line in stage['dockerlines']:

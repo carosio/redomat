@@ -26,7 +26,9 @@ class Declaration:
         for buildstage in manifest_root.iter('buildstage'):
 
             # create template dictionary
-            stage = { 'dockerlines' : [] }
+            stage = {}
+            stage['actions'] = []
+            stage['basepath'] = os.path.abspath(xml_file)
 
             if buildstage.get('id'):
                 stage['id'] = buildstage.get('id')
@@ -42,7 +44,7 @@ class Declaration:
                 # evaluate all different tags:
                 # * prestage
                 # * bitbake_target
-                # * dockerline
+                # * action (with @type being one of bitbake, command)
                 if stage_command.tag == 'prestage':
                     stage['prestage'] = stage_command.text.strip()
 
@@ -70,5 +72,17 @@ class Declaration:
 
     def stage(self, stageid):
         return self.stagedict.get(stageid)
+
+    def guess_startstage(self):
+        # look for stages marked as startstage
+        for stage in self.stages:
+            if self.stagedict[stage].has_key("startstage"):
+                return stage
+        # fallback to any stage without a prestage
+        for stage in self.stages:
+            if not self.stagedict[stage].has_key("prestage"):
+                return stage
+        # no clue...
+        return None
 
 # vim:expandtab:ts=4

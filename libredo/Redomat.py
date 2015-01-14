@@ -1,20 +1,16 @@
-from docker import Client
+import docker
+import getpass
 import time, os
 import xml.etree.ElementTree as XML
 
 class Redomat:
 
-    def __init__(self,client=None):
+    def __init__(self,service_url):
         """
             a builder for yocto using docker to support builds on top of other builds
         """
-        # check if client is passed
-        if client is None:
-            raise Exception("client is not set")
-
-        # set some default values
-        # set the client
-        self.client = client
+        self.service_url = service_url
+        self.service_version = "0.6.0"
         # stage that is build
         self.current_stage = "undefined"
         # current image name that is processed
@@ -27,6 +23,27 @@ class Redomat:
         self.build_id = "%s-%s"%(time.strftime("%F-%H%M%S"), os.getenv('LOGNAME'))
         # counter for container so the id's don't collide
         self.run_sequence = 0
+        self.include_foreigns = False
+
+        self.dclient = docker.Client(base_url=self.service_url,version=self.service_version,timeout=2400)
+
+    def find_images(self):
+        if self.include_foreigns:
+            pattern = "*-*-*"
+        else:
+            pattern = "*-%s-*"%getpass.getuser()
+        return self.find_images_by_pattern(pattern)
+
+    def find_images_by_stage(self, stage):
+        if self.include_foreigns:
+            pattern = "*-*-%s"%stage
+        else:
+            pattern = "*-%s-%s"%(getpass.getuser(), stage)
+        return self.find_images_by_pattern(pattern)
+
+    def find_images_by_pattern(self, pattern):
+        for image in self.dclient.images(name=pattern):
+            yield image
 
     def data_parser(self, docker_line):
         """
@@ -50,15 +67,13 @@ class Redomat:
         self.run_sequence = self.run_sequence + 1
         return "%03i"%self.run_sequence
 
-    def FROM(self, image=None):
+    def FROM(self, image):
         """
             tag an image to begin from
         """
-        # check if all the parameters are passed
-        if image is None:
-            raise Exception("no image given to work with")
+
         # check if the image contains laststage
-        elif 'laststage' in image:
+        if 'laststage' in image:
             # pick up from the previous stage
             print("picking up build from lasstage: " + self.laststage)
             image = self.laststage
@@ -202,3 +217,5 @@ class Redomat:
         self.client.create_container(image=self.current_image, name=name, command=cmd)
         # commit the container with the new entry point set
         self.client.commit(container=name, repository=self.current_image)
+
+# vim:expandtab:ts=4

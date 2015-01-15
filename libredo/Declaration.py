@@ -113,7 +113,7 @@ class Declaration:
 
 
     def stages(self):
-        return self.stages
+        return self.stagedict.keys()
 
     def stage(self, stageid):
         return self.stagedict.get(stageid)
@@ -128,6 +128,15 @@ class Declaration:
             if not self.stagedict[stage].has_key("prestage"):
                 return stage
         # no clue...
+        return None
+
+    def guess_targetstage(self):
+        stages = set(self.stagedict)
+        for stage in self.stagedict.keys():
+            if self.stagedict[stage].has_key("prestage"):
+                stages.remove(self.stagedict[stage]["prestage"])
+        if len(stages) == 1:
+            return stages.pop()
         return None
 
     def __str__(self):

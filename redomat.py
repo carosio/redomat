@@ -79,6 +79,9 @@ def main(argv):
     # create a xml-file for the repo tool
     XML_creator(declaration).create_repoxml("init-repo/repo-" + declaration)
 
+    # pass declaration to redomat
+    redo.add(decl)
+
     # iterate over the list of stages and pass the relevant lines to the redomat
     for stage in stages:
         # print the good to knows

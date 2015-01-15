@@ -32,7 +32,24 @@ class Redomat:
         # (allow other user's images as candidates)
         self.include_foreigns = False
 
+        self.username = getpass.getuser()
+
         self.exposed_docker_commands = set(['FROM', 'RUN', 'ADD', 'WORKDIR', 'ENTRYPOINT'])
+
+    def add(self, _decl):
+        """
+            set the build declaration to be used for the next build
+        """
+        self.decl = _decl
+
+    def setuser(self, _user):
+        """
+            set specific username.
+            the username is one component of the name of containers,
+            images and tags. the default is to use the user name of
+            the detected system username.
+        """
+        self.username = _user
 
     def allow_foreign_images(self, flag):
         """
@@ -45,14 +62,14 @@ class Redomat:
         if self.include_foreigns:
             pattern = "*-*-*"
         else:
-            pattern = "*-%s-*"%getpass.getuser()
+            pattern = "*-%s-*"%self.username
         return self.find_images_by_pattern(pattern)
 
     def find_images_by_stage(self, stage):
         if self.include_foreigns:
             pattern = "*-*-%s"%stage
         else:
-            pattern = "*-%s-%s"%(getpass.getuser(), stage)
+            pattern = "*-%s-%s"%(self.username, stage)
         return self.find_images_by_pattern(pattern)
 
     def find_images_by_pattern(self, pattern):

@@ -35,29 +35,7 @@ class XML_creator:
         # create a new xml root for the repo.xml
         repo_xml_root = XML.Element("manifest")
 
-        # read all layer declarations
-        for layer_declaration in self.manifest_root.iter('layer_declaration'):
-            # read all deceleration lines
-            for repo_line in layer_declaration.iter().next():
-                # if the tag reads layer
-                if repo_line.tag == 'layer':
-                    # convert the layer tag to project and add a new knot to the new xml root 
-                    repo_xml = XML.SubElement(repo_xml_root, 'project')
-                    # convert attributes and values to meet the repo.xml syntax
-                    for attribute, value in repo_line.attrib.iteritems():
-                        if 'path' in attribute:
-                            repo_xml.set('path', value)
-                        if 'reponame' in attribute:
-                            repo_xml.set('name', value)
-                        else:
-                            repo_xml.set(attribute, value)
-                # if the tag reads remote 
-                else:
-                    # add a new remote knot
-                    repo_xml = XML.SubElement(repo_xml_root, repo_line.tag)
-                    # add 1:1 attributes and values
-                    for attribute, value in repo_line.attrib.iteritems():
-                        repo_xml.set(attribute, value)
+        # reading stage declaration has been moved from here to Declaration.py
 
         # convert the xml root to a xml tree
         tree = XML.ElementTree(repo_xml_root)

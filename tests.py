@@ -1,12 +1,16 @@
 #!/usr/bin/python
 
-import os
+import os, sys
 
-from redomatfunctions.Declaration import Declaration
+from libredo.Declaration import Declaration
+
+here = os.path.realpath(os.path.dirname(sys.argv[0]))
+print here
+
 
 d = Declaration()
 # FIXME copy example declaration into this repo
-stages = d.parse("%s/vc/tp/tposs-release/redodecl/default.xml"%os.getenv("HOME"))
+d.parse("%s/example/example.xml"%here)
 
-print stages
+print d
 

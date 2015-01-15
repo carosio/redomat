@@ -6,12 +6,12 @@
 		<layer remote="github" revision="deadbeef" repo="hello_world.git" />
 	</layer_declaration>
 
-    <local_conf>
-        <BB_NUMBER_THREADS>8</BB_NUMBER_THREADS>
-        <PARALLEL_MAKE>-j 8</PARALLEL_MAKE>
-        <MACHINE>vmware</MACHINE>
-        <DISTRO>helloworld</DISTRO>
-    </local_conf>
+	<local_conf>
+		<BB_NUMBER_THREADS>8</BB_NUMBER_THREADS>
+		<PARALLEL_MAKE>-j 8</PARALLEL_MAKE>
+		<MACHINE>vmware</MACHINE>
+		<DISTRO>helloworld</DISTRO>
+	</local_conf>
 
 	<buildstage id="001-ubuntu">
 		<action>FROM ubuntu:14.04</action>

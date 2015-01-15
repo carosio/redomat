@@ -14,20 +14,20 @@
     </local_conf>
 
 	<buildstage id="001-ubuntu">
-		<dockerline>FROM ubuntu:14.04</dockerline>
-		<dockerline>RUN apt-get update</dockerline>
-		<dockerline>RUN apt-get install -y gawk wget git-core diffstat unzip texinfo gcc-multilib build-essential chrpath libsdl1.2-dev vim sudo curl webfs</dockerline>
-		<dockerline>RUN mkdir /REDO</dockerline>
-		<dockerline>RUN mkdir /REDO/build</dockerline>
-		<dockerline>RUN mkdir /REDO/source</dockerline>
+		<action>FROM ubuntu:14.04</action>
+		<action>RUN apt-get update</action>
+		<action>RUN apt-get install -y gawk wget git-core diffstat unzip texinfo gcc-multilib build-essential chrpath libsdl1.2-dev vim sudo curl webfs</action>
+		<action>RUN mkdir /REDO</action>
+		<action>RUN mkdir /REDO/build</action>
+		<action>RUN mkdir /REDO/source</action>
 		<!-- FIXME actually redomat should do this kind of preparation without any need for declaration -->
 	</buildstage>
 
 	<buildstage id="002-hello-world">
 		<prestage>001-ubuntu</prestage>
-		<dockerline>WORKDIR /REDO/source</dockerline>
-		<dockerline>ADD hello-world.txt /REDO/source/hello-world.txt</dockerline>
-		<dockerline>RUN cp -v hello-world.txt foobar.txt</dockerline>
+		<action>WORKDIR /REDO/source</action>
+		<action>ADD hello-world.txt /REDO/source/hello-world.txt</action>
+		<action>RUN cp -v hello-world.txt foobar.txt</action>
 	</buildstage>
 
 </redo>

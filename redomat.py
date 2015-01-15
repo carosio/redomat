@@ -31,7 +31,6 @@ def main(argv):
     declarations=args
 
     target_stage = None
-    build_opts = {}
     # spawn new redomat instance (docker client interface)
     redo = Redomat('unix://var/run/docker.sock')
 
@@ -51,10 +50,10 @@ def main(argv):
             # from other users too
             redo.allow_foreign_images(True)
         elif opt in ['-e', '--entry']:
-            print("starting at entry stage [%s]."%build_opts["entry_stage"])
+            print("starting at entry stage [%s]."%arg)
             redo.set_entry_stage(arg)
         elif opt in ['-t', '--target']:
-            print("trying to reach target stage [%s]."%build_opts["target_stage"])
+            print("trying to reach target stage [%s]."%arg)
             target_stage = arg
         elif opt in ['-l', '--list']:
             # print all images that match a given stage name

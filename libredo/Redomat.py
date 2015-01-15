@@ -19,13 +19,7 @@ class Redomat:
         # stage that is build
         self.current_stage = None
         # current image name that is processed
-        self.current_image = "undefined"
-
-        # last stage that was build
-        self.laststage = "undefined"
-        # prestage specified in the redomat.xml
-        self.prestage = "undefined"
-
+        self.current_image = None
 
         # counter for container so the id's don't collide
         self.run_sequence = 0
@@ -38,14 +32,24 @@ class Redomat:
         self.build_id = None
         self.match_build_id = None
         self.dry_run = False
+        self._entry_stage = None
 
         self.username = getpass.getuser()
 
         self.exposed_docker_commands = set(['FROM', 'RUN', 'ADD', 'WORKDIR', 'ENTRYPOINT'])
 
+    def set_entry_stage(self, s):
+        self._entry_stage = s
+
     def log(self, severity, message):
         # FIXME use logging framework
-        print message
+        m = []
+        if self.build_id:
+            m.append("[%s]"%self.build_id)
+        if self.current_stage:
+            m.append("(%s)"%self.current_stage)
+        m.append(message)
+        print " ".join(m)
 
     def add(self, _decl):
         """
@@ -116,6 +120,7 @@ class Redomat:
         chain = []
         sid = target
 
+        self.log(7, "generating build-chaing")
         while True:
             stage = self.decl.stage(sid)
             assert(type(stage) == dict)
@@ -132,8 +137,13 @@ class Redomat:
                 # without a prestage there must be a FROM,
                 # which specifies the verbatim starting point
                 # from a docker registry/hub.
-                fromline = stage['actions'][0]
+                fromline = stage['actions'].pop(0).strip()
+                if not fromline.startswith("FROM "):
+                    raise BuildException("a stage without pre-stage lacks FROM")
                 chain.append((sid, fromline.split(" ")[1].strip()))
+                break
+            if stage == self._entry_stage:
+                self.log(7, "entry stage matched")
                 break
         return chain
 
@@ -161,22 +171,32 @@ class Redomat:
 
             self.current_stage = stage
 
-            self.log(5, "starting build of stage [%s] with build-id [%s]"%(self.current_stage, self.build_id))
+            self.log(5, "starting build.")
 
             # set the current image vatiable
-            self.current_image = "%s-%s"%(self.build_id, self.current_stage)
+            self._resetseq()
+            self.current_image = "%s:%s-%s"%(self.build_id, self.current_stage, self._seq())
 
             # check pre-image
             try:
-                pre_image_details = dclient.inspect_image(pre_image)
-            except: # FIXME catch more precisely
+                pre_image_details = self.dclient.inspect_image(pre_image)
+                # key changed from id to Id between 0.6.0 and following 
+                # docker client versions. we try to be compatible
+                image_id =  pre_image_details.get('Id') or  pre_image_details.get('id')
+                self.log(6, "pre-image [%s] resolved to: %s"%(pre_image, image_id))
+            except Exception, e: # FIXME catch more precisely
                 # image not found
+                self.log(3, e.__str__())
                 raise BuildException("cannot build. pre_image [%s] not accesible."%pre_image)
 
             # tag the current image
-            self.dclient.tag(pre_image,self.build_id)
-            self.log(5, "successfully tagged [%s@%s]"%(pre_image, self.current_image))
-            except:
+            tag = "%s-%s"%(self.current_stage, self._seq())
+            self.dclient.tag(pre_image, self.build_id, tag=tag)
+            self.log(5, "successfully tagged %s as [%s@%s]"%(pre_image, self.build_id, tag))
+
+            if False:
+                # just keeping some code which was never called
+                # (image_tag is used too early, this would throw)
                 try:
                     # if the tag cannot be created try to pull the image
                     print("pulling: " + image + ":" + image_tag)
@@ -184,10 +204,13 @@ class Redomat:
                     self.dclient.pull(repository=image,tag=image_tag)
                     self.dclient.tag(image + ":" + image_tag,self.current_image)
                 except:
-                    raise Exception("The base image could not be found local or remote")
+                    raise BuildException("The base image could not be found local or remote")
 
             for action in stage_decl['actions']:
                 self.log(7, "executing action [%s]"%action)
+                self.handle_dockerline(action)
+                self.current_image = "%s:%s-%s"%(self.build_id, self.current_stage, self._seq())
+
 
 
     def allow_foreign_images(self, flag):
@@ -215,11 +238,9 @@ class Redomat:
         for image in self.dclient.images(name=pattern):
             yield image
 
-    def data_parser(self, docker_line):
-        # FIXME: bad wording: a parser should not execute
+    def handle_dockerline(self, docker_line):
         """
-            map redomat lines to the functions of the redomat
-            (and also execute them)
+            execute "dockerlines"
         """
         # split the callback function from the parameters
         docker_command = docker_line.split(" ")
@@ -235,6 +256,15 @@ class Redomat:
 
         # pass the commands to the redomat
         callback(" ".join(docker_command[1:]).strip())
+
+    def _resetseq(self):
+        self.run_sequence = 0
+
+    def _seq(self):
+        """
+            return current seq without incrementing
+        """
+        return "%03i"%self.run_sequence
 
     def _nextseq(self):
         """
@@ -263,18 +293,25 @@ class Redomat:
         assert(self.dclient)
 
         # set the name of the container being processed
-        name = "%s-%s-%s"%(self.build_id, self.current_stage, self._nextseq())
-        # create a container withe the command that should be executed
-        self.dclient.create_container(image=self.current_image, name=name, command=cmd)
-        # start the crated container
+        name = "%s-%s-%s"%(self.build_id, self.current_stage, self._seq())
+
+        # create the container
+        container = self.dclient.create_container(image=self.current_image, name=name, command=cmd)
+        container_id = container.get('Id') or container.get('id')
+        self.log(4, "new container started [%s] from [%s]"%(container_id, self.current_image))
+
+        # start the container
         self.dclient.start(container=name, privileged=True)
 
         # wait till the command is executed
         if self.dclient.wait(container=name) is not 0:
             # raise Exception if the command exited with a non zero code
-            raise Exception("Container " + name + " exited with a non zero exit status")
+            raise BuildException("Container " + name + " exited with a non zero exit status")
+
         # commit the currently processed container
-        self.dclient.commit(container=name, repository=self.current_image)
+        tag = "%s-%s"%(self.current_stage, self._nextseq())
+        self.dclient.commit(container=name, repository=self.build_id, tag=tag)
+        self.log(4, "container [%s] committed -> [%s]"%(container_id, "%s:%s"%(self.build_id,tag)))
 
     def ADD(self, parameter):
         """

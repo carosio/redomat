@@ -2,8 +2,8 @@
 <redo>
 
 	<layer_declaration>
-		<remote fetch="git://github.com/travelping" name="github" />
-		<layer remote="github" revision="deadbeef" reponame="hello_world.git" />
+		<remote name="github" baseurl="git://github.com/travelping" />
+		<layer remote="github" revision="deadbeef" repo="hello_world.git" />
 	</layer_declaration>
 
     <local_conf>

@@ -17,6 +17,10 @@ class Declaration:
     def generate_stage_id(self):
         return "auto_stagename_%s"%uuid.uuid4()
 
+    def log(self, severity, message):
+        # FIXME use logging framework
+        print message
+
     def parse(self, xml_file):
         """
             parse redomat declaration (xml) and add layers and stages to this instance
@@ -25,15 +29,43 @@ class Declaration:
         """
         # read the redomat.xml xml root
         manifest_root=XML.parse(xml_file).getroot()
-        stages = []
 
+        # parse layer declaration
+        new_layers = []
+        for layer_declaration in manifest_root.iter('layer_declaration'):
+            # read all deceleration lines
+            for repo_line in layer_declaration.iter():
+                if repo_line.tag == 'layer_declaration': continue
+
+                # if the tag reads layer
+                if repo_line.tag == 'layer':
+                    layer = {}
+                    for attribute in ['remote', 'revision', 'repo']:
+                        if not repo_line.attrib.has_key(attribute):
+                            raise DeclarationError("attribute [%s] missing in layer declaration"%attribute)
+                        layer[attribute] = repo_line.attrib[attribute]
+                    new_layers.append(layer)
+                    self.log(6, "added layer [%s]."%layer)
+
+                # if the tag reads remote
+                elif repo_line.tag == 'remote':
+                    remote = {}
+                    for attribute in ['name', 'baseurl']:
+                        if not repo_line.attrib.has_key(attribute):
+                            raise DeclarationError("attribute [%s] missing in remote declaration"%attribute)
+                        remote[attribute] = repo_line.attrib[attribute]
+                    self.layer_remotes[remote['name']] = remote
+                    self.log(6, "added layer-remote [%s]."%remote['name'])
+        self.layers.extend(new_layers)
+
+        new_stages = []
         # parse the xml root to dictionary in the stages list by iterating over all build stages
         for buildstage in manifest_root.iter('buildstage'):
             #{{{
             # create template dictionary
             stage = {}
             stage['actions'] = []
-            stage['basepath'] = os.path.abspath(xml_file)
+            stage['basepath'] = os.path.realpath(os.path.dirname(xml_file))
 
             if buildstage.get('id'):
                 stage['id'] = buildstage.get('id')
@@ -41,8 +73,9 @@ class Declaration:
                 stage['id'] = self.generate_stage_id()
 
             # store in list and dict
-            stages.append(stage['id'])
+            new_stages.append(stage['id'])
             self.stagedict[stage['id']] = stage
+            self.log(6, "added stage [%s]."%stage['id'])
 
             # iterate over items in the build stages knot 
             for stage_command in buildstage.iter():
@@ -55,48 +88,28 @@ class Declaration:
 
                 # evaluate bitbake_target
                 elif stage_command.tag == 'bitbake_target':
+                    new_actions = []
                     # add some needed lines before running the bitbake command
                     ## touch sanity-conf so bitbake will build as root 
-                    stage['actions'].append('RUN touch /REDO/build/conf/sanity.conf')
+                    new_actions.append('RUN touch /REDO/build/conf/sanity.conf')
                     ## source oe-init-build-env to setup the environment for bitbake
-                    stage['actions'].append('RUN /bin/bash -c "source /REDO/source/poky/oe-init-build-env /REDO/build && bitbake')
+                    new_actions.append('RUN /bin/bash -c "source /REDO/source/poky/oe-init-build-env /REDO/build && bitbake')
                     ## check if the bitbake_target knot has a command specified
                     if stage_command.get('command'):
                         # add the command with the -c flag to the bitbake command
-                        stage['actions'].append(stage['actions'].pop() + ' -c ' + stage_command.get('command'))
+                        new_actions.append(new_actions.pop() + ' -c ' + stage_command.get('command'))
                     ## add the bitbake target and the closing apostrophe 
-                    stage['actions'].append(stage['actions'].pop() + " " + stage_command.text + '"')
+                    new_actions.append(new_actions.pop() + " " + stage_command.text + '"')
+                    stage['actions'].extend(new_actions)
+                    self.log(6, "added bitbake actions: [%s]."%new_actions)
 
                 # evaluate a dockerline by passing it 1:1
                 elif stage_command.tag == 'action':
                     stage['actions'].append(stage_command.text)
+                    self.log(6, "added action: [%s]."%stage_command.text)
             #}}}
-            return stages
+        return new_layers, new_stages
 
-
-        # parse layer declaration
-        for layer_declaration in manifest_root.iter('layer_declaration'):
-            # read all deceleration lines
-            for repo_line in layer_declaration.iter():
-                if repo_line.tag == 'layer_declaration': continue
-
-                # if the tag reads layer
-                if repo_line.tag == 'layer':
-                    layer = {}
-                    for attribute in ['remote', 'revision', 'repo']:
-                        if not repo_line.has_key(attribute):
-                            raise DeclarationError("attribute [%s] missing in layer declaration"%attribute)
-                        layer[attribute] = repo_line.attrib[attribute]
-                    self.layers.append(layer)
-
-                # if the tag reads remote
-                elif repo_line.tag == 'remote':
-                    remote = {}
-                    for attribute in ['name', 'baseurl']:
-                        if not repo_line.has_key(attribute):
-                            raise DeclarationError("attribute [%s] missing in remote declaration"%attribute)
-                        remote[attribute] = repo_line.attrib[attribute]
-                    self.layer_remotes[remote['name']] = remote
 
 
     def stages(self):

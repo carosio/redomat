@@ -101,8 +101,9 @@ class Redomat:
         """
        
         if self.match_build_id:
-            expectation = "%s-%s"%(self.match_build_id, stage)
+            expectation = "%s:%s"%(self.match_build_id, stage)
             if expectation in self.find_images_by_stage(stage=stage):
+                self.log(6, "matched [%s]"%expectation)
                 return expectation
         else:
             # TODO implement some heuristic to pick any matching stage
@@ -120,7 +121,7 @@ class Redomat:
         chain = []
         sid = target
 
-        self.log(7, "generating build-chaing")
+        self.log(7, "generating build-chain")
         while True:
             stage = self.decl.stage(sid)
             assert(type(stage) == dict)
@@ -210,6 +211,8 @@ class Redomat:
                 self.log(7, "executing action [%s]"%action)
                 self.handle_dockerline(action)
                 self.current_image = "%s:%s-%s"%(self.build_id, self.current_stage, self._seq())
+            self.log(5, "stage actions completed. tagging: %s:%s"%(self.build_id, self.current_stage))
+            self.dclient.tag(self.current_image, self.build_id, self.current_stage)
 
 
 
@@ -229,10 +232,13 @@ class Redomat:
 
     def find_images_by_stage(self, stage):
         if self.include_foreigns:
-            pattern = "*-*-%s"%stage
+            pattern = "*-*"
         else:
-            pattern = "*-%s-%s"%(self.username, stage)
-        return self.find_images_by_pattern(pattern)
+            pattern = "*-%s"%self.username
+        # filter for requested stage
+        for image in self.find_images_by_pattern(pattern):
+            if image.get('Tag') == stage:
+                yield "%s:%s"%(image.get('Repository'),image.get('Tag'))
 
     def find_images_by_pattern(self, pattern):
         for image in self.dclient.images(name=pattern):

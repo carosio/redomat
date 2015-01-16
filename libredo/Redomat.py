@@ -128,11 +128,15 @@ class Redomat:
 
             prestage = stage.get("prestage")
             if prestage:
-                chain.append((sid, self.resolve_stage_to_image(prestage)))
-                if chain[-1][1]:
+                prestage_image = self.resolve_stage_to_image(prestage)
+                if prestage_image:
                     # prestage could be resolved to existing image
                     # the chain ends here. this is the starting point
+                    chain.append((sid, prestage_image))
                     break
+                else:
+                    # this image has to be built:
+                    chain.append((sid, "%s:%s"%(self.build_id, prestage)))
                 sid = prestage
             else:
                 # without a prestage there must be a FROM,
@@ -146,6 +150,7 @@ class Redomat:
             if stage == self._entry_stage:
                 self.log(7, "entry stage matched")
                 break
+        self.log(6, "build-chain: %s"%chain)
         return chain
 
     def build(self, stage):
@@ -162,7 +167,7 @@ class Redomat:
 
         build_chain = self.generate_build_chain(stage)
 
-        while True:
+        while build_chain:
             stage, pre_image = build_chain.pop()
 
             stage_decl = self.decl.stage(stage)
@@ -187,13 +192,17 @@ class Redomat:
                 self.log(6, "pre-image [%s] resolved to: %s"%(pre_image, image_id))
             except Exception, e: # FIXME catch more precisely
                 # image not found
-                self.log(3, e.__str__())
-                raise BuildException("cannot build. pre_image [%s] not accesible."%pre_image)
+                if not self.dry_run:
+                    self.log(3, e.__str__())
+                    raise BuildException("cannot build. pre_image [%s] not accesible."%pre_image)
 
             # tag the current image
             tag = "%s-%s"%(self.current_stage, self._seq())
-            self.dclient.tag(pre_image, self.build_id, tag=tag)
-            self.log(5, "successfully tagged %s as [%s@%s]"%(pre_image, self.build_id, tag))
+            if not self.dry_run:
+                self.dclient.tag(pre_image, self.build_id, tag=tag)
+                self.log(5, "successfully tagged %s as [%s@%s]"%(pre_image, self.build_id, tag))
+            else:
+                self.log(5, "successfully (not) tagged %s as [%s@%s]"%(pre_image, self.build_id, tag))
 
             if False:
                 # just keeping some code which was never called
@@ -208,11 +217,15 @@ class Redomat:
                     raise BuildException("The base image could not be found local or remote")
 
             for action in stage_decl['actions']:
-                self.log(7, "executing action [%s]"%action)
-                self.handle_dockerline(action)
+                if not self.dry_run:
+                    self.log(7, "executing action [%s]"%action)
+                    self.handle_dockerline(action)
+                else:
+                    self.log(5, "(not) executing action [%s]"%action)
                 self.current_image = "%s:%s-%s"%(self.build_id, self.current_stage, self._seq())
             self.log(5, "stage actions completed. tagging: %s:%s"%(self.build_id, self.current_stage))
-            self.dclient.tag(self.current_image, self.build_id, self.current_stage)
+            if not self.dry_run:
+                self.dclient.tag(self.current_image, self.build_id, self.current_stage)
 
 
 
@@ -325,9 +338,9 @@ class Redomat:
         """
 
         # split filename and target
-        file_name, target =parameter.split()
+        file_name, target = parameter.split()
         # add the directory of the current stage to the filename
-        file_name=self.current_stage + "/" + file_name
+        file_name=self.current_stage + "/" + file_name # FIXME use declaration basepath
 
         # check if the file exists
         if target is None:

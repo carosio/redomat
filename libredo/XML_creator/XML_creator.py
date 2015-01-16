@@ -93,14 +93,10 @@ class XML_creator:
         if bblayers.closed is False:
             raise Exception("Something went wrong while closing the bblayers file")
 
-    def create_local(self, out_name=None):
+    def create_local_conf(self, out_name):
         """
-            function used to crate the bblayers.conf for bitbake
-            the out put file name must be passed
+            function used to create the bblayers.conf for bitbake
         """
-        # check if parameters are passed correctly
-        if out_name is None:
-            raise Exception("no output file name given")
 
         # if the passed file exists remove it
         if os.path.exists(out_name):

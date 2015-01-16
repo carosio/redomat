@@ -92,35 +92,16 @@ def main(argv):
                 print(decl.stages())
             sys.exit(1)
     redo.build(target_stage)
+    print "build completed."
+    sys.exit(0)
 
 
     # iterate over the list of stages and pass the relevant lines to the redomat
     for stage in stages:
-        # print the good to knows
-        print(stage)
-        print("build this stage: " + str(stage['build']))
-        redo.current_stage = stage['id']
-        redo.prestage = stage['prestage']
-
         # create the bblayers.conf according to the layers specefied in the  redomat.xml
         XML_creator(declaration).create_bblayers(stage['id'] + "/bblayers.conf")
         XML_creator(declaration).create_local(stage['id'] + "/local.conf")
 
-        # iterate over all the elements in the list dockerlines of the dictionary stage
-        for line in stage['dockerlines']:
-            # pass the line to the redomat data_parser if the stage is marked as to build
-            if stage['build']:
-                print(line)
-                redo.data_parser(line)
-            # if the stage is not marked as to build check if the line includes a FROM statement
-            elif 'FROM' in line:
-                # overwrite the current image variable to use a custom build id
-                redo.current_image=build_id + "-" + stage['id']
-                # tag the image with the custom build id so it can be used as a base for the new image
-                redo.client.tag(image=redo.current_image, repository=redo.build_id + "-" + stage['id'])
-        redo.laststage = redo.current_image
-        print("laststage: " + redo.laststage)
-        print("done building: " + stage['id'])
 
 if __name__ == "__main__":
     main(sys.argv[1:])

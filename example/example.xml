@@ -3,12 +3,11 @@
 
 	<layer_declaration>
 		<remote name="github" baseurl="git://github.com/travelping" />
-		<layer remote="github" revision="deadbeef" repo="hello_world.git" />
+		<baselayer remote="github" revision="deadbeef" repo="hello_world.git" />
+		<layer name="hello_world" remote="github" revision="deadbeef" repo="hello_world.git" />
 	</layer_declaration>
 
 	<local_conf>
-		<BB_NUMBER_THREADS>8</BB_NUMBER_THREADS>
-		<PARALLEL_MAKE>-j 8</PARALLEL_MAKE>
 		<MACHINE>vmware</MACHINE>
 		<DISTRO>helloworld</DISTRO>
 	</local_conf>

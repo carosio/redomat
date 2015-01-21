@@ -341,6 +341,9 @@ class Redomat:
             ADD a file to an image
         """
 
+        # check if parameters are passed correctly
+        assert(self.dclient)
+
         # split filename and target
         file_name, target = parameter.split()
         # add the directory of the current stage to the filename
@@ -359,23 +362,32 @@ class Redomat:
         # read the absolute path of the file dir of the stage
         volume_path=os.path.abspath(self.current_stage)
         # set the name of the container being processed
-        name = "%s-%s-%s-%s"%(self.build_id, self.current_stage, self._nextseq(), "create-target_dir")
+        name = "%s-%s-%s"%(self.build_id, self.current_stage, self._seq())
 
-        # create a container to create the target dir
-        self.dclient.create_container(image=self.current_image, name=name, command="/bin/mkdir -pv " + os.path.dirname(target))
+        # create the container to create target dir
+        container = self.dclient.create_container(image=self.current_image, name=name, command="/bin/mkdir -pv " + os.path.dirname(target))
+        container_id = container.get('Id') or container.get('id')
+        self.log(4, "new container started [%s] from [%s]"%(container_id, self.current_image))
+
         # run the container
         self.dclient.start(container=name)
 
         # commit when the container exited with a non zero exit code
         if self.dclient.wait(container=name) is not 0:
-                         raise Exception("Container " + name + " could not create a dir to use for th ADD command")
-        self.dclient.commit(container=name, repository=self.current_image)
+            raise BuildException("Container " + name + " could not create a dir to use for th ADD command")
+        
+        tag = "%s-%s"%(self.current_stage, self._seq())
+        self.dclient.commit(container=name, repository=self.build_id, tag=tag)
+        self.log(4, "container [%s] committed -> [%s]"%(container_id, "%s:%s"%(self.build_id,tag)))
 
         # set the name of the container being processed
-        name = "%s-%s-%s-%s"%(self.build_id, self.current_stage, self._nextseq(), "copy-data")
+        name = "%s-%s-%s-%s"%(self.build_id, self.current_stage, self._seq(), "copy")
 
-        # create a container to copy the file to the target image
-        self.dclient.create_container(image=self.current_image, name=name, volumes=volume_path, command="cp -rv /files/" + file_name + " " + target)
+        # create the container to copy file
+        container = self.dclient.create_container(image=self.current_image, name=name, volumes=volume_path, command="cp -rv /files/" + file_name + " " + target)
+        container_id = container.get('Id') or container.get('id')
+        self.log(4, "new container started [%s] from [%s]"%(container_id, self.current_image))
+
         # start the container with the files dir of the stage connected as a volume
         self.dclient.start(container=name, binds={
                 volume_path:
@@ -386,36 +398,60 @@ class Redomat:
 
         # commit when the container exited with a non zero exit code
         if self.dclient.wait(container=name) is not 0:
-            raise Exception("Container " + name + " exited with a non zero exit status")
-        self.dclient.commit(container=name, repository=self.current_image)
+            # raise Exception if the command exited with a non zero code
+            raise BuildException("Container " + name + " exited with a non zero exit status")
+
+        tag = "%s-%s"%(self.current_stage, self._nextseq())
+        self.dclient.commit(container=name, repository=self.build_id, tag=tag)
+        self.log(4, "container [%s] committed -> [%s]"%(container_id, "%s:%s"%(self.build_id,tag)))
 
     def WORKDIR(self, directory):
         """
             set a WORKDIR for an image
         """
+
+        # check if parameters are passed correctly
+        assert(self.dclient)
+
         # set name for the current container being processed
-        name = "%s-%s-%s"%(self.build_id, self.current_stage, self._nextseq())
+        name = "%s-%s-%s"%(self.build_id, self.current_stage, self._seq())
 
-        # create the container and set a working dir
-        self.dclient.create_container(image=self.current_image, name=name, working_dir=directory)
+        # create the container
+        container = self.dclient.create_container(image=self.current_image, name=name, working_dir=directory)
+        container_id = container.get('Id') or container.get('id')
+        self.log(4, "new container started [%s] from [%s]"%(container_id, self.current_image))
 
-        # commit the container
-        self.dclient.commit(container=name, repository=self.current_image)
+        # commit when the container exited with a non zero exit code
+        if self.dclient.wait(container=name) is not 0:
+            # raise Exception if the command exited with a non zero code
+            raise BuildException("Container " + name + " exited with a non zero exit status")
+            
+        tag = "%s-%s"%(self.current_stage, self._nextseq())
+        self.dclient.commit(container=name, repository=self.build_id, tag=tag)
+        self.log(4, "container [%s] committed -> [%s]"%(container_id, "%s:%s"%(self.build_id,tag)))
 
     def ENTRYPOINT(self, cmd):
         """
             set entry point of image
         """
         # check if parameters are passed correctly
-        if self.dclient is None:
-            raise Exception("No client given to work with")
+        assert(self.dclient)
 
         # set the name of the container being processed
-        name = "%s-%s-%s"%(self.build_id, self.current_stage, self._nextseq())
+        name = "%s-%s-%s"%(self.build_id, self.current_stage, self._seq())
 
-        # create a container with a different entry point set
-        self.client.create_container(image=self.current_image, name=name, command=cmd)
-        # commit the container with the new entry point set
-        self.client.commit(container=name, repository=self.current_image)
+        # create the container
+        container = self.dclient.create_container(image=self.current_image, name=name, command=cmd)
+        container_id = container.get('Id') or container.get('id')
+        self.log(4, "new container started [%s] from [%s]"%(container_id, self.current_image))
+
+        # commit when the container exited with a non zero exit code
+        if self.dclient.wait(container=name) is not 0:
+            # raise Exception if the command exited with a non zero code
+            raise BuildException("Container " + name + " exited with a non zero exit status")
+            
+        tag = "%s-%s"%(self.current_stage, self._nextseq())
+        self.dclient.commit(container=name, repository=self.build_id, tag=tag)
+        self.log(4, "container [%s] committed -> [%s]"%(container_id, "%s:%s"%(self.build_id,tag)))
 
 # vim:expandtab:ts=4

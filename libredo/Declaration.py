@@ -11,7 +11,8 @@ class Declaration:
         """
 
         self.stagedict = {}
-        self.layers = []
+        self.layers = {}
+        self.baselayer = None
         self.layer_remotes = {}
 
     def generate_stage_id(self):
@@ -31,7 +32,7 @@ class Declaration:
         manifest_root=XML.parse(xml_file).getroot()
 
         # parse layer declaration
-        new_layers = []
+        new_layers = {}
         for layer_declaration in manifest_root.iter('layer_declaration'):
             # read all deceleration lines
             for repo_line in layer_declaration.iter():
@@ -40,12 +41,20 @@ class Declaration:
                 # if the tag reads layer
                 if repo_line.tag == 'layer':
                     layer = {}
-                    for attribute in ['remote', 'revision', 'repo']:
+                    for attribute in ['name', 'remote', 'revision', 'repo']:
                         if not repo_line.attrib.has_key(attribute):
                             raise DeclarationError("attribute [%s] missing in layer declaration"%attribute)
                         layer[attribute] = repo_line.attrib[attribute]
-                    new_layers.append(layer)
+                    new_layers[layer['name']] = layer
                     self.log(6, "added layer [%s]."%layer)
+
+                elif repo_line.tag == 'baselayer':
+                    self.baselayer = {}
+                    for attribute in ['remote', 'revision', 'repo']:
+                        if not repo_line.attrib.has_key(attribute):
+                            raise DeclarationError("attribute [%s] missing in baselayer declaration"%attribute)
+                        self.baselayer[attribute] = repo_line.attrib[attribute]
+                    self.log(6, "baselayer: [%s]."%self.baselayer)
 
                 # if the tag reads remote
                 elif repo_line.tag == 'remote':
@@ -56,7 +65,7 @@ class Declaration:
                         remote[attribute] = repo_line.attrib[attribute]
                     self.layer_remotes[remote['name']] = remote
                     self.log(6, "added layer-remote [%s]."%remote['name'])
-        self.layers.extend(new_layers)
+        self.layers.update(new_layers)
 
         new_stages = []
         # parse the xml root to dictionary in the stages list by iterating over all build stages

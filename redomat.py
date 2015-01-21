@@ -3,7 +3,7 @@ import docker
 import sys
 import os
 import getopt
-from libredo import Redomat
+from libredo import Redomat, Repotool
 from libredo.XML_creator import XML_creator
 from libredo import Declaration
 
@@ -13,6 +13,9 @@ redomat <option> <redomat.xml>
     -h, --help
         print this help
 
+    -c, --checkout
+        standalone checkout
+
     -s, --stage=STAGE
         start building from STAGE
 
@@ -21,14 +24,15 @@ redomat <option> <redomat.xml>
 def main(argv):
     # evaluate passed flags
     try:
-        opts, args = getopt.getopt(argv,"hniLl:e:t:b:B:",
-                ["help", "dry-run", "images", "list=", "list-all", "entry=", "target=", "match-build-id", "new-build-id="])
+        opts, args = getopt.getopt(argv,"hcniLl:e:t:b:B:",
+                ["help", "checkout", "dry-run", "images", "list=", "list-all", "entry=", "target=", "match-build-id", "new-build-id="])
     except getopt.GetoptError, e:
         print(e)
         print(usage())
         sys.exit(1)
 
     declarations=args
+    checkout_mode = False
 
     target_stage = None
     # spawn new redomat instance (docker client interface)
@@ -39,6 +43,8 @@ def main(argv):
         if opt in ['-h', '--help']:
             print(usage())
             sys.exit(0)
+        elif opt in ['-c', '--checkout']:
+            checkout_mode = True
         elif opt in ['-n', '--dry-run']:
             redo.set_dryrun(True)
         elif opt in ['-B', '--new-build-id']:
@@ -79,6 +85,12 @@ def main(argv):
 
     # pass declaration to redomat
     redo.add(decl)
+
+    if checkout_mode:
+        repotool = Repotool(decl)
+        for cmd in repotool.checkout_all("."):
+            print cmd
+        sys.exit(0)
 
     if not target_stage:
         target_stage = decl.guess_targetstage()

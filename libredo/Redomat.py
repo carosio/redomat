@@ -15,7 +15,6 @@ class Redomat:
         self.service_url = service_url
         self.service_version = "0.6.0"
         self.dclient = docker.Client(base_url=self.service_url,version=self.service_version,timeout=2400)
-
         # stage that is build
         self.current_stage = None
         # current image name that is processed
@@ -191,8 +190,13 @@ class Redomat:
                 image_id =  pre_image_details.get('Id') or  pre_image_details.get('id')
                 self.log(6, "pre-image [%s] resolved to: %s"%(pre_image, image_id))
             except Exception, e: # FIXME catch more precisely
-                # image not found
-                if not self.dry_run:
+                # image not found try to pull the image
+                try:
+                    #self.log(5, "try pulling [%s%] from the docker registry"%(pre_image))
+                    image_name, image_tag = pre_image.split(":")
+                    self.dclient.pull(repository=image_name,tag=image_tag)
+                    self.dclient.tag(image_name + ":" + image_tag,self.current_image)
+                except:
                     self.log(3, e.__str__())
                     raise BuildException("cannot build. pre_image [%s] not accesible."%pre_image)
 

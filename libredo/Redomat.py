@@ -360,7 +360,7 @@ class Redomat:
         # split of the name of the file
         file_name=os.path.basename(file_name)
         # read the absolute path of the file dir of the stage
-        volume_path=os.path.abspath(self.current_stage)
+        volume_path=self.decl.stage['basepath']
         # set the name of the container being processed
         name = "%s-%s-%s"%(self.build_id, self.current_stage, self._seq())
 
@@ -425,7 +425,7 @@ class Redomat:
         if self.dclient.wait(container=name) is not 0:
             # raise Exception if the command exited with a non zero code
             raise BuildException("Container " + name + " exited with a non zero exit status")
-            
+
         tag = "%s-%s"%(self.current_stage, self._nextseq())
         self.dclient.commit(container=name, repository=self.build_id, tag=tag)
         self.log(4, "container [%s] committed -> [%s]"%(container_id, "%s:%s"%(self.build_id,tag)))
@@ -449,7 +449,7 @@ class Redomat:
         if self.dclient.wait(container=name) is not 0:
             # raise Exception if the command exited with a non zero code
             raise BuildException("Container " + name + " exited with a non zero exit status")
-            
+
         tag = "%s-%s"%(self.current_stage, self._nextseq())
         self.dclient.commit(container=name, repository=self.build_id, tag=tag)
         self.log(4, "container [%s] committed -> [%s]"%(container_id, "%s:%s"%(self.build_id,tag)))

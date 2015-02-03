@@ -1,6 +1,5 @@
-import docker
-import getpass
-import time, os
+import docker, getpass, time, os
+from libredo import Repotool
 import xml.etree.ElementTree as XML
 
 class BuildException(Exception):
@@ -12,9 +11,11 @@ class Redomat:
         """
             a builder for yocto using docker to support builds on top of other builds
         """
+        self.decl = []
         self.service_url = service_url
         self.service_version = "0.6.0"
         self.dclient = docker.Client(base_url=self.service_url,version=self.service_version,timeout=2400)
+        self.repotool = Repotool.Repotool(self.decl)
         # stage that is build
         self.current_stage = None
         # current image name that is processed
@@ -35,7 +36,7 @@ class Redomat:
 
         self.username = getpass.getuser()
 
-        self.exposed_docker_commands = set(['FROM', 'RUN', 'ADD', 'WORKDIR', 'ENTRYPOINT'])
+        self.exposed_docker_commands = set(['REPOSYNC', 'FROM', 'RUN', 'ADD', 'WORKDIR', 'ENTRYPOINT'])
 
     def set_entry_stage(self, s):
         self._entry_stage = s
@@ -295,6 +296,16 @@ class Redomat:
         """
         self.run_sequence = self.run_sequence + 1
         return "%03i"%self.run_sequence
+
+    def REPOSYNC(self, foo):
+        """
+            sync all repos
+        """
+
+        self.repotool.set_declaration(self.decl)
+        cmds = self.repotool.checkout_all("/REDO/source")
+        for cmd in cmds:
+            self.RUN("/bin/bash -c \"%s\""%cmd)
 
     def FROM(self, image):
         """

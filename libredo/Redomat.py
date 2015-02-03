@@ -1,6 +1,5 @@
-import docker
-import getpass
-import time, os
+import docker, getpass, time, os
+from libredo import Repotool
 import xml.etree.ElementTree as XML
 
 class BuildException(Exception):
@@ -12,13 +11,14 @@ class Redomat:
         """
             a builder for yocto using docker to support builds on top of other builds
         """
+        self.decl = []
         self.service_url = service_url
         self.service_version = "0.6.0"
         self.dclient = docker.Client(base_url=self.service_url,version=self.service_version,timeout=2400)
+        self.repotool = Repotool.Repotool(self.decl)
         # stage that is build
         self.current_stage = None
         # current image name that is processed
-        self.current_image = None
 
         # counter for container so the id's don't collide
         self.run_sequence = 0
@@ -35,7 +35,7 @@ class Redomat:
 
         self.username = getpass.getuser()
 
-        self.exposed_docker_commands = set(['FROM', 'RUN', 'ADD', 'WORKDIR', 'ENTRYPOINT'])
+        self.exposed_docker_commands = set(['REPOSYNC', 'FROM', 'RUN', 'ADD', 'WORKDIR', 'ENTRYPOINT'])
 
     def set_entry_stage(self, s):
         self._entry_stage = s
@@ -180,7 +180,6 @@ class Redomat:
 
             # set the current image vatiable
             self._resetseq()
-            self.current_image = "%s:%s-%s"%(self.build_id, self.current_stage, self._seq())
 
             # check pre-image
             try:
@@ -195,7 +194,7 @@ class Redomat:
                     #self.log(5, "try pulling [%s%] from the docker registry"%(pre_image))
                     image_name, image_tag = pre_image.split(":")
                     self.dclient.pull(repository=image_name,tag=image_tag)
-                    self.dclient.tag(image_name + ":" + image_tag,self.current_image)
+                    self.dclient.tag(image_name + ":" + image_tag,self._current_image())
                 except:
                     self.log(3, e.__str__())
                     raise BuildException("cannot build. pre_image [%s] not accesible."%pre_image)
@@ -216,7 +215,7 @@ class Redomat:
                     print("pulling: " + image + ":" + image_tag)
                     image, image_tag = image.split(":")
                     self.dclient.pull(repository=image,tag=image_tag)
-                    self.dclient.tag(image + ":" + image_tag,self.current_image)
+                    self.dclient.tag(image + ":" + image_tag,self._current_image())
                 except:
                     raise BuildException("The base image could not be found local or remote")
 
@@ -226,12 +225,12 @@ class Redomat:
                     self.handle_action(action)
                 else:
                     self.log(5, "(not) executing action [%s]"%action)
-                self.current_image = "%s:%s-%s"%(self.build_id, self.current_stage, self._seq())
             self.log(5, "stage actions completed. tagging: %s:%s"%(self.build_id, self.current_stage))
             if not self.dry_run:
-                self.dclient.tag(self.current_image, self.build_id, self.current_stage)
+                self.dclient.tag(self._current_image(), self.build_id, self.current_stage)
 
-
+    def _current_image(self):
+        return "%s:%s-%s"%(self.build_id, self.current_stage, self._seq())
 
     def set_enable_foreign_images(self, flag):
         """
@@ -296,6 +295,18 @@ class Redomat:
         self.run_sequence = self.run_sequence + 1
         return "%03i"%self.run_sequence
 
+    def REPOSYNC(self, foo):
+        """
+            sync all repos
+        """
+
+        self.repotool.set_declaration(self.decl)
+        cmds = self.repotool.checkout_all("/REDO/source")
+        for cmd in cmds:
+            self.RUN("/bin/bash -c \"%s\""%cmd)
+            self.current_image = "%s:%s-%s"%(self.build_id, self.current_stage, self._seq())
+            self.log(6, "RUN /bin/bash -c \"%s\""%cmd)
+
     def FROM(self, image):
         """
             The FROM line has to be present in entry-stages
@@ -319,9 +330,9 @@ class Redomat:
         name = "%s-%s-%s"%(self.build_id, self.current_stage, self._seq())
 
         # create the container
-        container = self.dclient.create_container(image=self.current_image, name=name, command=cmd)
+        container = self.dclient.create_container(image=self._current_image(), name=name, command=cmd)
         container_id = container.get('Id') or container.get('id')
-        self.log(4, "new container started [%s] from [%s]"%(container_id, self.current_image))
+        self.log(4, "new container started [%s] from [%s]"%(container_id, self._current_image()))
 
         # start the container
         self.dclient.start(container=name, privileged=True)
@@ -364,9 +375,9 @@ class Redomat:
         name = "%s-%s-%s"%(self.build_id, self.current_stage, self._seq())
 
         # create the container to create target dir
-        container = self.dclient.create_container(image=self.current_image, name=name, command="/bin/mkdir -pv " + os.path.dirname(target))
+        container = self.dclient.create_container(image=self._current_image(), name=name, command="/bin/mkdir -pv " + os.path.dirname(target))
         container_id = container.get('Id') or container.get('id')
-        self.log(4, "new container started [%s] from [%s]"%(container_id, self.current_image))
+        self.log(4, "new container started [%s] from [%s]"%(container_id, self._current_image()))
 
         # run the container
         self.dclient.start(container=name)
@@ -383,9 +394,9 @@ class Redomat:
         name = "%s-%s-%s-%s"%(self.build_id, self.current_stage, self._seq(), "copy")
 
         # create the container to copy file
-        container = self.dclient.create_container(image=self.current_image, name=name, volumes=volume_path, command="cp -rv \"/files/" + file_name + "\" " + target)
+        container = self.dclient.create_container(image=self._current_image(), name=name, volumes=volume_path, command="cp -rv \"/files/" + file_name + "\" " + target)
         container_id = container.get('Id') or container.get('id')
-        self.log(4, "new container started [%s] from [%s]"%(container_id, self.current_image))
+        self.log(4, "new container started [%s] from [%s]"%(container_id, self._current_image()))
 
         # start the container with the files dir of the stage connected as a volume
         self.dclient.start(container=name, binds={
@@ -416,9 +427,9 @@ class Redomat:
         name = "%s-%s-%s"%(self.build_id, self.current_stage, self._seq())
 
         # create the container
-        container = self.dclient.create_container(image=self.current_image, name=name, working_dir=directory)
+        container = self.dclient.create_container(image=self._current_image(), name=name, working_dir=directory)
         container_id = container.get('Id') or container.get('id')
-        self.log(4, "new container started [%s] from [%s]"%(container_id, self.current_image))
+        self.log(4, "new container started [%s] from [%s]"%(container_id, self._current_image()))
 
         # commit when the container exited with a non zero exit code
         if self.dclient.wait(container=name) is not 0:
@@ -440,9 +451,9 @@ class Redomat:
         name = "%s-%s-%s"%(self.build_id, self.current_stage, self._seq())
 
         # create the container
-        container = self.dclient.create_container(image=self.current_image, name=name, command=cmd)
+        container = self.dclient.create_container(image=self._current_image(), name=name, command=cmd)
         container_id = container.get('Id') or container.get('id')
-        self.log(4, "new container started [%s] from [%s]"%(container_id, self.current_image))
+        self.log(4, "new container started [%s] from [%s]"%(container_id, self._current_image()))
 
         # commit when the container exited with a non zero exit code
         if self.dclient.wait(container=name) is not 0:

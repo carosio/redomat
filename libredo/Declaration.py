@@ -14,7 +14,6 @@ class Declaration:
         self.layers = {}
         self.baselayer = None
         self.layer_remotes = {}
-
         self.extra_local_conf = ""
 
     def generate_stage_id(self):
@@ -123,6 +122,12 @@ class Declaration:
                 elif stage_command.tag == 'action':
                     stage['actions'].append(stage_command.text)
                     self.log(6, "added action: [%s]."%stage_command.text)
+
+                # evaluate reposync
+                elif stage_command.tag == 'reposync':
+                    stage['actions'].append("REPOSYNC")
+                    self.log(6, "added action: [REPOSYNC].")
+
             #}}}
         return new_layers, new_stages
 

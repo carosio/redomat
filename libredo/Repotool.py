@@ -21,6 +21,12 @@ class Repotool:
         if not self.branch_id:
             self.branch_id = "%s-%s"%(time.strftime("%F-%H%M%S"), uuid.uuid1())
 
+    def set_declaration(self, decl):
+        """
+            set declaration
+        """
+        self.declaration = decl
+
     def checkout(self, destpath, git_url, revision):
         cmds = []
         cmds.append("""
@@ -42,8 +48,18 @@ class Repotool:
 
     def checkout_all(self, checkout_dir):
         cmds = []
+
+        baselayer = self.declaration.baselayer
+        git_dir = "/".join((checkout_dir, baselayer['repo']))
+        remote = self.declaration.layer_remotes.get(baselayer['remote'])
+        repo = baselayer['repo']
+        revision = baselayer['revision']
+        git_url = "/".join([remote['baseurl'], repo])
+        cmds.extend(self.checkout(git_dir, git_url, revision))
+
         for layername, layer in self.declaration.layers.iteritems():
             assert(layername == layer['name'])
+            git_dir = "/".join((checkout_dir, baselayer['repo'], layer["name"]))
             remote = self.declaration.layer_remotes.get(layer['remote'])
             repo = layer['repo']
             revision = layer['revision']

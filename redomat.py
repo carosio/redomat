@@ -54,7 +54,7 @@ def main(argv):
         elif opt in ['-f', '--foreign']:
             # this will allow redomat to select matching stage-images
             # from other users too
-            redo.allow_foreign_images(True)
+            redo.set_enable_foreign_images(True)
         elif opt in ['-e', '--entry']:
             print("starting at entry stage [%s]."%arg)
             redo.set_entry_stage(arg)
@@ -84,7 +84,7 @@ def main(argv):
     stages = decl.stages()
 
     # pass declaration to redomat
-    redo.add(decl)
+    redo.set_decl(decl)
 
     if checkout_mode:
         repotool = Repotool(decl)

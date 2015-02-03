@@ -50,7 +50,7 @@ class Redomat:
         m.append(message)
         print " ".join(m)
 
-    def add(self, _decl):
+    def set_decl(self, _decl):
         """
             set the build declaration to be used for the next build
         """
@@ -223,7 +223,7 @@ class Redomat:
             for action in stage_decl['actions']:
                 if not self.dry_run:
                     self.log(7, "executing action [%s]"%action)
-                    self.handle_dockerline(action)
+                    self.handle_action(action)
                 else:
                     self.log(5, "(not) executing action [%s]"%action)
                 self.current_image = "%s:%s-%s"%(self.build_id, self.current_stage, self._seq())
@@ -233,7 +233,7 @@ class Redomat:
 
 
 
-    def allow_foreign_images(self, flag):
+    def set_enable_foreign_images(self, flag):
         """
             set flag to True/False to enable/disable images
             from other users as candidates for prestages
@@ -261,12 +261,12 @@ class Redomat:
         for image in self.dclient.images(name=pattern):
             yield image
 
-    def handle_dockerline(self, docker_line):
+    def handle_action(self, action):
         """
-            execute "dockerlines"
+            execute "action"
         """
         # split the callback function from the parameters
-        docker_command = docker_line.split(" ")
+        docker_command = action.split(" ")
 
         # better check if the command is part of what we want to expose
         if not docker_command[0] in self.exposed_docker_commands:
@@ -384,7 +384,7 @@ class Redomat:
         name = "%s-%s-%s-%s"%(self.build_id, self.current_stage, self._seq(), "copy")
 
         # create the container to copy file
-        container = self.dclient.create_container(image=self.current_image, name=name, volumes=volume_path, command="cp -rv /files/" + file_name + " " + target)
+        container = self.dclient.create_container(image=self.current_image, name=name, volumes=volume_path, command="cp -rv \"/files/" + file_name + "\" " + target)
         container_id = container.get('Id') or container.get('id')
         self.log(4, "new container started [%s] from [%s]"%(container_id, self.current_image))
 
@@ -397,7 +397,7 @@ class Redomat:
                     }})
 
         # commit when the container exited with a non zero exit code
-        if self.dclient.wait(container=name) is not 0:
+        if self.dclient.wait(container=name) != 0:
             # raise Exception if the command exited with a non zero code
             raise BuildException("Container " + name + " exited with a non zero exit status")
 

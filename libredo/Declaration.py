@@ -15,6 +15,8 @@ class Declaration:
         self.baselayer = None
         self.layer_remotes = {}
 
+        self.extra_local_conf = ""
+
     def generate_stage_id(self):
         return "auto_stagename_%s"%uuid.uuid4()
 
@@ -30,6 +32,11 @@ class Declaration:
         """
         # read the redomat.xml xml root
         manifest_root=XML.parse(xml_file).getroot()
+
+        # parse extras for local.conf
+        for local_conf in manifest_root.findall("local_conf"):
+            self.extra_local_conf += local_conf.text
+            self.log(6, "added extra_local_conf [%s]."%self.extra_local_conf)
 
         # parse layer declaration
         new_layers = {}

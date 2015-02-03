@@ -359,7 +359,7 @@ class Redomat:
         # split of the name of the file
         file_name=os.path.basename(file_name)
         # read the absolute path of the file dir of the stage
-        volume_path=self.decl.stage['basepath']
+        volume_path=self.decl.stage(self.current_stage)["basepath"] + "/" + self.current_stage
         # set the name of the container being processed
         name = "%s-%s-%s"%(self.build_id, self.current_stage, self._seq())
 

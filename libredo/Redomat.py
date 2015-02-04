@@ -12,7 +12,7 @@ class Redomat:
         """
             a builder for yocto using docker to support builds on top of other builds
         """
-        self.decl = []
+        self.decl = None
         self.service_url = service_url
         self.service_version = "0.6.0"
         self.dclient = docker.Client(base_url=self.service_url,version=self.service_version,timeout=2400)
@@ -101,7 +101,7 @@ class Redomat:
             if no image is found None is returned. this usually means
             that a rebuild of the stage is necessary.
         """
-       
+
         if self.match_build_id:
             expectation = "%s:%s"%(self.match_build_id, stage)
             if expectation in self.find_images_by_stage(stage=stage):
@@ -299,31 +299,34 @@ class Redomat:
         self.run_sequence = self.run_sequence + 1
         return "%03i"%self.run_sequence
 
-    def CREATE_BBLAYERS(self, foo):
+    def CREATE_BBLAYERS(self, args):
         """
             create bblayers.conf
         """
 
         self.conf_creator.set_decl(self.decl)
         self.conf_creator.create_bblayers()
-        cmd = self.conf_creator.bblayers['cmd']
 
-        self.RUN(cmd="/bin/bash -c \"echo \'%s\' > /REDO/build/conf/bblayers.conf\""%cmd)
-        self.log(6, "RUN /bin/bash -c \"%s\""%cmd)
+        runcmd = "/bin/bash -c \"%s\""% \
+            self.conf_creator.bblayers['cmd']
 
-    def CREATE_LOCAL_CONF(self, foo):
+        self.RUN(runcmd)
+        self.log(6, "RUN: %s"%runcmd)
+
+    def CREATE_LOCAL_CONF(self, args):
         """
-            create bblayers.conf
+            create bblayers.conf  // finde einen fehler
         """
 
         self.conf_creator.set_decl(self.decl)
         self.conf_creator.create_local_conf()
-        cmd = self.conf_creator.local_conf['cmd']
+        runcmd = "/bin/bash -c \"%s\""% \
+            self.conf_creator.local_conf['cmd']
 
-        self.RUN(cmd="/bin/bash -c \"echo \'%s\' > /REDO/build/conf/local.conf\""%cmd)
-        self.log(6, "RUN /bin/bash -c \"%s\""%cmd)
+        self.RUN(runcmd)
+        self.log(6, "RUN: %s"%cmd)
 
-    def REPOSYNC(self, foo):
+    def REPOSYNC(self, args):
         """
             sync all repos
         """

@@ -46,7 +46,7 @@ class ConfCreator:
                         "
             """%extra_bblayer
 
-        self.bblayers['cmd'] = "echo \"%s\""%self.bblayers['text']
+        self.bblayers['cmd'] = "echo \"%s\" > /REDO/build/conf/bblayers.conf"%self.bblayers['text']
 
     def create_local_conf(self):
         """
@@ -72,5 +72,5 @@ class ConfCreator:
             %s
         """%self.declaration.extra_local_conf
 
-        self.local_conf['cmd'] = "echo \"%s\""%self.local_conf['text']
+        self.local_conf['cmd'] = "echo \"%s\" > /REDO/build/conf/local.conf"%self.local_conf['text']
 

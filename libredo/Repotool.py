@@ -48,9 +48,21 @@ class Repotool:
 
     def checkout_all(self, checkout_dir):
         cmds = []
+        print self.declaration.layers
+
+        baselayer = self.declaration.baselayer
+        git_dir = "%s%s"%(checkout_dir, baselayer['repo'])
+        remote = self.declaration.layer_remotes.get(baselayer['remote'])
+        repo = baselayer['repo']
+        revision = baselayer['revision']
+        git_url = "/".join([remote['baseurl'], repo])
+        cmds.extend(self.checkout(checkout_dir, git_url, revision))
+
         for layername, layer in self.declaration.layers.iteritems():
+            print layer
+            print layername
             assert(layername == layer['name'])
-            git_dir = "%s%s%s"%(checkout_dir, "/", layer["name"])
+            git_dir = "%s%s%s%s%s"%(checkout_dir, "/", baselayer, "/", layer["name"])
             remote = self.declaration.layer_remotes.get(layer['remote'])
             repo = layer['repo']
             revision = layer['revision']

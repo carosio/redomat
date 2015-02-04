@@ -106,7 +106,10 @@ class Declaration:
                     new_actions = []
                     # add some needed lines before running the bitbake command
                     ## touch sanity-conf so bitbake will build as root 
+                    new_actions.append('RUN mkdir -p /REDO/build/conf')
                     new_actions.append('RUN touch /REDO/build/conf/sanity.conf')
+                    new_actions.append('CREATE_BBLAYERS')
+                    new_actions.append('CREATE_LOCAL_CONF')
                     ## source oe-init-build-env to setup the environment for bitbake
                     new_actions.append('RUN /bin/bash -c "source /REDO/source/poky/oe-init-build-env /REDO/build && bitbake')
                     ## check if the bitbake_target knot has a command specified
@@ -130,8 +133,6 @@ class Declaration:
 
             #}}}
         return new_layers, new_stages
-
-
 
     def stages(self):
         return self.stagedict.keys()

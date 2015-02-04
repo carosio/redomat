@@ -1,5 +1,6 @@
 import docker, getpass, time, os
 from libredo import Repotool
+from libredo.ConfCreator import ConfCreator
 import xml.etree.ElementTree as XML
 
 class BuildException(Exception):
@@ -16,6 +17,7 @@ class Redomat:
         self.service_version = "0.6.0"
         self.dclient = docker.Client(base_url=self.service_url,version=self.service_version,timeout=2400)
         self.repotool = Repotool.Repotool(self.decl)
+        self.conf_creator = ConfCreator(self.decl)
         # stage that is build
         self.current_stage = None
         # current image name that is processed
@@ -36,7 +38,7 @@ class Redomat:
 
         self.username = getpass.getuser()
 
-        self.exposed_docker_commands = set(['REPOSYNC', 'FROM', 'RUN', 'ADD', 'WORKDIR', 'ENTRYPOINT'])
+        self.exposed_docker_commands = set(['CREATE_BBLAYERS','CREATE_LOCAL_CONF','REPOSYNC', 'FROM', 'RUN', 'ADD', 'WORKDIR', 'ENTRYPOINT'])
 
     def set_entry_stage(self, s):
         self._entry_stage = s
@@ -297,6 +299,30 @@ class Redomat:
         self.run_sequence = self.run_sequence + 1
         return "%03i"%self.run_sequence
 
+    def CREATE_BBLAYERS(self, foo):
+        """
+            create bblayers.conf
+        """
+
+        self.conf_creator.set_decl(self.decl)
+        self.conf_creator.create_bblayers()
+        cmd = self.conf_creator.bblayers['cmd']
+
+        self.RUN(cmd="/bin/bash -c \"echo \'%s\' > /REDO/build/conf/bblayers.conf\""%cmd)
+        self.log(6, "RUN /bin/bash -c \"%s\""%cmd)
+
+    def CREATE_LOCAL_CONF(self, foo):
+        """
+            create bblayers.conf
+        """
+
+        self.conf_creator.set_decl(self.decl)
+        self.conf_creator.create_local_conf()
+        cmd = self.conf_creator.local_conf['cmd']
+
+        self.RUN(cmd="/bin/bash -c \"echo \'%s\' > /REDO/build/conf/local.conf\""%cmd)
+        self.log(6, "RUN /bin/bash -c \"%s\""%cmd)
+
     def REPOSYNC(self, foo):
         """
             sync all repos
@@ -304,8 +330,10 @@ class Redomat:
 
         self.repotool.set_declaration(self.decl)
         cmds = self.repotool.checkout_all("/REDO/source")
+        print cmds
         for cmd in cmds:
-            self.RUN("/bin/bash -c \"%s\""%cmd)
+            self.RUN(cmd="/bin/bash -c \"%s\""%cmd)
+            self.log(6, "RUN /bin/bash -c \"%s\""%cmd)
 
     def FROM(self, image):
         """

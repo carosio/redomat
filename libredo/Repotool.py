@@ -51,7 +51,7 @@ class Repotool:
         print self.declaration.layers
 
         baselayer = self.declaration.baselayer
-        git_dir = "%s/%s"%(checkout_dir, baselayer['repo'])
+        git_dir = "/".join((checkout_dir, baselayer['repo']))
         remote = self.declaration.layer_remotes.get(baselayer['remote'])
         repo = baselayer['repo']
         revision = baselayer['revision']
@@ -62,7 +62,7 @@ class Repotool:
             print layer
             print layername
             assert(layername == layer['name'])
-            git_dir = "%s/%s/%s"%(checkout_dir, baselayer['repo'], layer["name"])
+            git_dir = "/".join((checkout_dir, baselayer['repo'], layer["name"]))
             remote = self.declaration.layer_remotes.get(layer['remote'])
             repo = layer['repo']
             revision = layer['revision']

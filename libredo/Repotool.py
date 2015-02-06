@@ -56,7 +56,7 @@ class Repotool:
         repo = baselayer['repo']
         revision = baselayer['revision']
         git_url = "/".join([remote['baseurl'], repo])
-        cmds.extend(self.checkout(checkout_dir, git_url, revision))
+        cmds.extend(self.checkout(git_dir, git_url, revision))
 
         for layername, layer in self.declaration.layers.iteritems():
             print layer

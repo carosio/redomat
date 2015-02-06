@@ -318,11 +318,11 @@ class Redomat:
 
         self.conf_creator.set_decl(self.decl)
         self.conf_creator.create_local_conf()
-        runcmd = "/bin/bash -c \"%s\""% \
-            self.conf_creator.local_conf['cmd']
+        runcmd = "/bin/bash -c cat > /REDO/build/conf/local.conf << EOF\n%s\nEOF\n"% \
+            self.conf_creator.local_conf['text']
 
-        self.RUN(runcmd)
         self.log(6, "RUN: %s"%runcmd)
+        self.RUN(runcmd)
 
     def REPOSYNC(self, args):
         """

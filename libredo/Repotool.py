@@ -36,13 +36,16 @@ class Repotool:
             [ ! -d .git ] && git init
 
             git remote add declremote %s
+            echo initially fetching remote: %s
             git fetch declremote
         else
             cd %s
+            pwd
+            echo fetching remote: %s
             git fetch declremote
         fi"""%
-                (destpath, destpath, destpath, git_url, destpath))
-        cmds.append("( cd %s ; git checkout -b declrev%s %s )"%
+                (destpath, destpath, destpath, git_url, git_url, destpath, git_url))
+        cmds.append("( echo checkout... ; cd %s ; git checkout -b declrev%s %s )"%
                 (destpath, self.branch_id, revision))
         return cmds
 

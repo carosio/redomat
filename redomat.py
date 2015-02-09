@@ -4,7 +4,6 @@ import sys
 import os
 import getopt
 from libredo import Redomat, Repotool
-from libredo.XML_creator import XML_creator
 from libredo import Declaration
 
 def usage():
@@ -107,12 +106,6 @@ def main(argv):
     print "build completed."
     sys.exit(0)
 
-
-    # iterate over the list of stages and pass the relevant lines to the redomat
-    for stage in stages:
-        # create the bblayers.conf according to the layers specefied in the  redomat.xml
-        XML_creator(declaration).create_bblayers(stage['id'] + "/bblayers.conf")
-        XML_creator(declaration).create_local(stage['id'] + "/local.conf")
 
 
 if __name__ == "__main__":

@@ -1,5 +1,6 @@
 import docker, getpass, time, os
 from libredo import Repotool
+from libredo.ConfCreator import ConfCreator
 import xml.etree.ElementTree as XML
 
 class BuildException(Exception):
@@ -11,11 +12,12 @@ class Redomat:
         """
             a builder for yocto using docker to support builds on top of other builds
         """
-        self.decl = []
+        self.decl = None
         self.service_url = service_url
         self.service_version = "0.6.0"
         self.dclient = docker.Client(base_url=self.service_url,version=self.service_version,timeout=2400)
         self.repotool = Repotool.Repotool(self.decl)
+        self.conf_creator = ConfCreator(self.decl)
         # stage that is build
         self.current_stage = None
         # current image name that is processed
@@ -35,7 +37,7 @@ class Redomat:
 
         self.username = getpass.getuser()
 
-        self.exposed_docker_commands = set(['REPOSYNC', 'FROM', 'RUN', 'ADD', 'WORKDIR', 'ENTRYPOINT'])
+        self.exposed_docker_commands = set(['CREATE_BBLAYERS','CREATE_LOCAL_CONF','REPOSYNC', 'FROM', 'RUN', 'ADD', 'WORKDIR', 'ENTRYPOINT'])
 
     def set_entry_stage(self, s):
         self._entry_stage = s
@@ -98,7 +100,7 @@ class Redomat:
             if no image is found None is returned. this usually means
             that a rebuild of the stage is necessary.
         """
-       
+
         if self.match_build_id:
             expectation = "%s:%s"%(self.match_build_id, stage)
             if expectation in self.find_images_by_stage(stage=stage):
@@ -295,7 +297,34 @@ class Redomat:
         self.run_sequence = self.run_sequence + 1
         return "%03i"%self.run_sequence
 
-    def REPOSYNC(self, foo):
+    def CREATE_BBLAYERS(self, args):
+        """
+            create bblayers.conf
+        """
+
+        self.conf_creator.set_decl(self.decl)
+        self.conf_creator.create_bblayers()
+
+        runcmd = "/bin/bash -c \'%s\'"% \
+            self.conf_creator.bblayers['cmd']
+
+        self.RUN(runcmd)
+        self.log(6, "RUN: %s"%runcmd)
+
+    def CREATE_LOCAL_CONF(self, args):
+        """
+            create local.conf
+        """
+
+        self.conf_creator.set_decl(self.decl)
+        self.conf_creator.create_local_conf()
+        runcmd = "/bin/bash -c \'%s\'"% \
+            self.conf_creator.local_conf['cmd']
+
+        self.log(6, "RUN: %s"%runcmd)
+        self.RUN(runcmd)
+
+    def REPOSYNC(self, args):
         """
             sync all repos
         """

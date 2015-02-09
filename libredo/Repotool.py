@@ -30,19 +30,24 @@ class Repotool:
     def checkout(self, destpath, git_url, revision):
         cmds = []
         cmds.append("""
-        if [ ! -d %s ] ; then 
+        if [ ! -d %s ] ; then
             mkdir -pv %s
             cd %s
             [ ! -d .git ] && git init
 
-            git remote add declremote %s 
+            git remote add declremote %s
+            echo initially fetching remote: %s
             git fetch declremote
         else
             cd %s
+            pwd
+            echo fetching remote: %s
             git fetch declremote
         fi"""%
-                (destpath, destpath, destpath, git_url, destpath))
-        cmds.append("( cd %s ; git checkout -b declrev%s %s )"%
+                (destpath, destpath, destpath, git_url, git_url, destpath, git_url))
+        if 'master' in revision:#set tracking
+            revision = "declremote/master"
+        cmds.append("( echo checkout... ; cd %s ; git checkout -b declrev%s %s )"%
                 (destpath, self.branch_id, revision))
         return cmds
 
@@ -51,6 +56,7 @@ class Repotool:
 
         baselayer = self.declaration.baselayer
         git_dir = "/".join((checkout_dir, baselayer['repo']))
+        git_dir = "%s/%s"%(checkout_dir, baselayer['repo'])
         remote = self.declaration.layer_remotes.get(baselayer['remote'])
         repo = baselayer['repo']
         revision = baselayer['revision']
@@ -63,8 +69,8 @@ class Repotool:
             remote = self.declaration.layer_remotes.get(layer['remote'])
             repo = layer['repo']
             revision = layer['revision']
-            git_url = "/".join([remote['baseurl'], repo])
-            cmds.extend(self.checkout(checkout_dir, git_url, revision))
+            git_url = ":".join([remote['baseurl'], repo])
+            cmds.extend(self.checkout(git_dir, git_url, revision))
         return cmds
 
 # vim:expandtab:ts=4

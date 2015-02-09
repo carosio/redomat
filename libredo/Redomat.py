@@ -305,8 +305,8 @@ class Redomat:
         self.conf_creator.set_decl(self.decl)
         self.conf_creator.create_bblayers()
 
-        runcmd = "/bin/bash -c \'%s\'"% \
-            self.conf_creator.bblayers['cmd']
+        runcmd = "/bin/bash -c \'cat - > /REDO/build/conf/bblayers.conf <<-\"EOF\" \n %s \'"% \
+            self.conf_creator.bblayers
 
         self.RUN(runcmd)
         self.log(6, "RUN: %s"%runcmd)
@@ -318,8 +318,8 @@ class Redomat:
 
         self.conf_creator.set_decl(self.decl)
         self.conf_creator.create_local_conf()
-        runcmd = "/bin/bash -c \'%s\'"% \
-            self.conf_creator.local_conf['cmd']
+        runcmd = "/bin/bash -c \'cat - > /REDO/build/conf/local.conf <<\"EOF\" \n %s \'"% \
+            self.conf_creator.local_conf
 
         self.log(6, "RUN: %s"%runcmd)
         self.RUN(runcmd)
@@ -333,7 +333,6 @@ class Redomat:
         cmds = self.repotool.checkout_all("/REDO/source")
         for cmd in cmds:
             self.RUN("/bin/bash -c \"%s\""%cmd)
-            self.current_image = "%s:%s-%s"%(self.build_id, self.current_stage, self._seq())
             self.log(6, "RUN /bin/bash -c \"%s\""%cmd)
 
     def FROM(self, image):

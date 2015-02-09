@@ -10,8 +10,8 @@ class ConfCreator:
         """
 
         self.declaration = _declaration
-        self.bblayers = {'cmd': "", 'text': ""}
-        self.local_conf = {'cmd': "",'text': ""}
+        self.bblayers = None
+        self.local_conf = None
 
     def set_decl(self, _decl):
         """
@@ -31,7 +31,7 @@ class ConfCreator:
         for layername, layer in self.declaration.layers.iteritems():
             extra_bblayer += " /REDO/source/%s/%s"%(baselayer,layer['name'])
 
-        self.bblayers['text'] = """
+        self.bblayers = """
 # LAYER_CONF_VERSION is increased each time build/conf/bblayers.conf
 # changes incompatibly
 LCONF_VERSION = "6"
@@ -45,14 +45,12 @@ BBLAYERS ?= " \
              %s "
             """%extra_bblayer
 
-        self.bblayers['cmd'] = "cat - > /REDO/build/conf/bblayers.conf <<\"EOF\" \n %s"%self.bblayers['text']
-
     def create_local_conf(self):
         """
             function used to create the bblayers.conf for bitbake
         """
 
-        self.local_conf['text'] ="""
+        self.local_conf ="""
 DL_DIR = "/REDO/download"
 PACKAGE_CLASSES = "package_ipk"
 EXTRA_IMAGE_FEATURES = "debug-tweaks"
@@ -70,6 +68,3 @@ PREFERRED_PROVIDER_virtual/erlang ?= "erlang16"
 PREFERRED_PROVIDER_virtual/erlang-native ?= "erlang16-native"
 %s
         """%self.declaration.extra_local_conf
-
-        self.local_conf['cmd'] = "cat - > /REDO/build/conf/local.conf <<\"EOF\" \n %s"%self.local_conf['text']
-

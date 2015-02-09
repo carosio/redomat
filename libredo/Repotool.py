@@ -45,7 +45,7 @@ class Repotool:
             git fetch declremote
         fi"""%
                 (destpath, destpath, destpath, git_url, git_url, destpath, git_url))
-        if 'master' in revision:#set tracking
+        if 'master' ==  revision:
             revision = "declremote/master"
         cmds.append("( echo checkout... ; cd %s ; git checkout -b declrev%s %s )"%
                 (destpath, self.branch_id, revision))
@@ -60,7 +60,7 @@ class Repotool:
         remote = self.declaration.layer_remotes.get(baselayer['remote'])
         repo = baselayer['repo']
         revision = baselayer['revision']
-        git_url = "/".join([remote['baseurl'], repo])
+        git_url = "".join([remote['baseurl'], repo])
         cmds.extend(self.checkout(git_dir, git_url, revision))
 
         for layername, layer in self.declaration.layers.iteritems():
@@ -69,7 +69,7 @@ class Repotool:
             remote = self.declaration.layer_remotes.get(layer['remote'])
             repo = layer['repo']
             revision = layer['revision']
-            git_url = ":".join([remote['baseurl'], repo])
+            git_url = "".join([remote['baseurl'], repo])
             cmds.extend(self.checkout(git_dir, git_url, revision))
         return cmds
 

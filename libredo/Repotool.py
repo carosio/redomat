@@ -56,7 +56,6 @@ class Repotool:
 
         baselayer = self.declaration.baselayer
         git_dir = "/".join((checkout_dir, baselayer['repo']))
-        git_dir = "%s/%s"%(checkout_dir, baselayer['repo'])
         remote = self.declaration.layer_remotes.get(baselayer['remote'])
         repo = baselayer['repo']
         revision = baselayer['revision']

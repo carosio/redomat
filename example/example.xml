@@ -2,7 +2,7 @@
 <redo>
 
 	<layer_declaration>
-		<remote name="github" baseurl="git://github.com/travelping" />
+		<remote name="github" baseurl="git://github.com/travelping/" />
 		<baselayer remote="github" revision="deadbeef" repo="hello_world.git" />
 		<layer name="hello_world" remote="github" revision="deadbeef" repo="hello_world.git" />
 	</layer_declaration>

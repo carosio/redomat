@@ -63,8 +63,6 @@ class Repotool:
         cmds.extend(self.checkout(git_dir, git_url, revision))
 
         for layername, layer in self.declaration.layers.iteritems():
-            print layer
-            print layername
             assert(layername == layer['name'])
             git_dir = "/".join((checkout_dir, baselayer['repo'], layer["name"]))
             remote = self.declaration.layer_remotes.get(layer['remote'])

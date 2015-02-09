@@ -305,21 +305,21 @@ class Redomat:
         self.conf_creator.set_decl(self.decl)
         self.conf_creator.create_bblayers()
 
-        runcmd = "/bin/bash -c \"%s\""% \
-            self.conf_creator.bblayers['cmd']
+        runcmd = "/bin/bash -c \'cat - > /REDO/build/conf/bblayers.conf <<-\"EOF\" \n %s \'"% \
+            self.conf_creator.bblayers
 
         self.RUN(runcmd)
         self.log(6, "RUN: %s"%runcmd)
 
     def CREATE_LOCAL_CONF(self, args):
         """
-            create bblayers.conf  // finde einen fehler
+            create local.conf
         """
 
         self.conf_creator.set_decl(self.decl)
         self.conf_creator.create_local_conf()
-        runcmd = "/bin/bash -c cat > /REDO/build/conf/local.conf << EOF\n%s\nEOF\n"% \
-            self.conf_creator.local_conf['text']
+        runcmd = "/bin/bash -c \'cat - > /REDO/build/conf/local.conf <<\"EOF\" \n %s \'"% \
+            self.conf_creator.local_conf
 
         self.log(6, "RUN: %s"%runcmd)
         self.RUN(runcmd)
@@ -331,9 +331,8 @@ class Redomat:
 
         self.repotool.set_declaration(self.decl)
         cmds = self.repotool.checkout_all("/REDO/source")
-        print cmds
         for cmd in cmds:
-            self.RUN(cmd="/bin/bash -c \"%s\""%cmd)
+            self.RUN("/bin/bash -c \"%s\""%cmd)
             self.log(6, "RUN /bin/bash -c \"%s\""%cmd)
 
     def FROM(self, image):
@@ -387,8 +386,7 @@ class Redomat:
         # split filename and target
         file_name, target = parameter.split()
         # add the directory of the current stage to the filename
-        file_name=self.decl.stage(self.current_stage)["basepath"] + "/" + self.current_stage + "/" + file_name # FIXME use declaration basepath
-
+        file_name=self.decl.stage(self.current_stage)["basepath"] + "/" + self.current_stage + "/" + file_name
         # check if the file exists
         if target is None:
             raise Exception("No target directory given")

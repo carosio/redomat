@@ -61,14 +61,11 @@ def main(argv):
             print("trying to reach target stage [%s]."%arg)
             target_stage = arg
         elif opt in ['-l', '--list']:
-            # print all images that match a given stage name
-            for image in redo.find_images_by_stage(stage=arg):
-                print(image['Repository'])
+            # print all images that match a given build id
+            redo.list_images(args)
             sys.exit(0)
         elif opt in ['-L', '--list-all']:
-            # print all images that (any stage)
-            for image in redo.find_images():
-                print(image['Repository'])
+            redo.list_all_buildID()
             sys.exit(0)
 
     # parse declaration(s)

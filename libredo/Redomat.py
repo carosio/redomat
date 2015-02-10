@@ -262,6 +262,19 @@ class Redomat:
         for image in self.dclient.images(name=pattern):
             yield image
 
+    def list_all_buildID(self):
+        build_ids = []
+        for image in self.dclient.images(all=True):
+            build_ids.append(image['Repository'])
+        build_ids=list(set(build_ids))
+        for ID in build_ids:
+            if '<none>' != ID:
+                print(ID)
+
+    def list_images(self, args):
+        for buildID in self.dclient.images(name=args):
+            print(buildID['Id'])
+
     def handle_action(self, action):
         """
             execute "action"

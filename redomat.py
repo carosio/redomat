@@ -24,7 +24,7 @@ def main(argv):
     # evaluate passed flags
     try:
         opts, args = getopt.getopt(argv,"hcniLl:e:t:b:B:",
-                ["help", "checkout", "dry-run", "images", "list=", "list-all", "entry=", "target=", "match-build-id", "new-build-id="])
+                ["help", "checkout", "dry-run", "images", "list=", "list-bids", "entry=", "target=", "match-build-id", "new-build-id="])
     except getopt.GetoptError, e:
         print(e)
         print(usage())
@@ -64,7 +64,7 @@ def main(argv):
             # print all images that match a given build id
             redo.list_images(args)
             sys.exit(0)
-        elif opt in ['-L', '--list-all']:
+        elif opt in ['-L', '--list-bids']:
             redo.list_all_buildID()
             sys.exit(0)
 

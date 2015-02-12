@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<redo>
+
+	<layer_declaration>
+
+		<layer name="hello_world"
+            remote="github"
+            revision="deadbeef"
+            repo="hello_world.git" />
+
+	</layer_declaration>
+
+	<local_conf>
+        <![CDATA[
+ MACHINE="vmware"
+ DISTRO="helloworld"
+        ]]>
+	</local_conf>
+
+	<buildstage id="002-hello-world">
+		<prestage>001-ubuntu</prestage>
+		<action>WORKDIR /REDO/source</action>
+		<action>ADD hello-world.txt /REDO/source/hello-world.txt</action>
+		<action>RUN cp -v hello-world.txt foobar.txt</action>
+	</buildstage>
+
+</redo>

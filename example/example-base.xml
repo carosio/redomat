@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<redo>
+
+	<layer_declaration>
+
+		<remote name="github"
+            baseurl="git://github.com/travelping/" />
+
+		<baselayer remote="github"
+            revision="deadbeef"
+            repo="hello_world.git" />
+
+	</layer_declaration>
+
+	<buildstage id="001-ubuntu">
+		<action>FROM ubuntu:14.04</action>
+		<action>RUN apt-get update</action>
+		<action>RUN apt-get install -y gawk wget git-core diffstat unzip texinfo gcc-multilib build-essential chrpath libsdl1.2-dev vim sudo curl webfs</action>
+		<action>RUN mkdir /REDO</action>
+		<action>RUN mkdir /REDO/build</action>
+		<action>RUN mkdir /REDO/source</action>
+        <reposync />
+	</buildstage>
+
+</redo>

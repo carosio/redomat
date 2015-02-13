@@ -193,7 +193,7 @@ class Redomat:
             except Exception, e: # FIXME catch more precisely
                 # image not found try to pull the image
                 try:
-                    #self.log(5, "try pulling [%s%] from the docker registry"%(pre_image))
+                    self.log(5, "try pulling [%s%] from the docker registry"%(pre_image))
                     image_name, image_tag = pre_image.split(":")
                     self.dclient.pull(repository=image_name,tag=image_tag)
                     self.dclient.tag(image_name + ":" + image_tag,self._current_image())

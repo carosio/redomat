@@ -35,16 +35,17 @@ class Repotool:
             cd %s
             [ ! -d .git ] && git init
 
-            git remote add declremote %s
+            git remote add declremote-$HOSTNAME %s
             echo initially fetching remote: %s
-            git fetch declremote
+            git fetch declremote-$HOSTNAME
         else
             cd %s
             pwd
             echo fetching remote: %s
-            git fetch declremote
+            git remote add declremote-$HOSTNAME %s
+            git fetch declremote-$HOSTNAME
         fi"""%
-                (destpath, destpath, destpath, git_url, git_url, destpath, git_url))
+                (destpath, destpath, destpath, git_url, git_url, destpath, git_url, git_url))
         if 'master' ==  revision:
             revision = "declremote/master"
         cmds.append("( echo checkout... ; cd %s ; git checkout -b declrev%s %s )"%

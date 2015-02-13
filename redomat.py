@@ -18,11 +18,11 @@ redomat <option> <redomat.xml>
     -s, --stage=STAGE
         start building from STAGE
 
-    -l, --list=BUILD ID
-        list all images that match a given BUILD ID
+    -l, --list=BID
+        list all images that match a given BUILD-ID
 
     -L, --list-bids
-        list all build IDs
+        list all BUILD-IDs
 
 """
 

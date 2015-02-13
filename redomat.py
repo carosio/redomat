@@ -18,6 +18,12 @@ redomat <option> <redomat.xml>
     -s, --stage=STAGE
         start building from STAGE
 
+    -l, --list=BUILD ID
+        list all images that match a given BUILD ID
+
+    -L, --list-bids
+        list all build IDs
+
 """
 
 def main(argv):
@@ -65,6 +71,7 @@ def main(argv):
             redo.list_images(args)
             sys.exit(0)
         elif opt in ['-L', '--list-bids']:
+            # print all build IDs
             redo.list_all_buildID()
             sys.exit(0)
 

@@ -53,7 +53,6 @@ BBLAYERS ?= " \
         self.local_conf ="""
 DL_DIR = "/REDO/download"
 PACKAGE_CLASSES = "package_ipk"
-EXTRA_IMAGE_FEATURES = "debug-tweaks"
 USER_CLASSES = "buildstats image-mklibs image-prelink"
 PATCHRESOLVE = "noop"
 BB_DISKMON_DIRS = "\
@@ -64,7 +63,5 @@ BB_DISKMON_DIRS = "\
     ABORT,${DL_DIR},100M,1K \
     ABORT,${SSTATE_DIR},100M,1K"
 CONF_VERSION = "1"
-PREFERRED_PROVIDER_virtual/erlang ?= "erlang16"
-PREFERRED_PROVIDER_virtual/erlang-native ?= "erlang16-native"
 %s
         """%self.declaration.extra_local_conf

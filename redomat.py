@@ -1,5 +1,4 @@
 #!/usr/bin/python
-import docker
 import sys
 import os
 import getopt

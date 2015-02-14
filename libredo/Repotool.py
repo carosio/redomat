@@ -1,72 +1,79 @@
-"""
-    libredo/Repotool
-
-    Tool for checking out layers from git.
-
-    (This is not the android repo-tool, but 
-    a replacement thereof in the scope of Redomat.)
-"""
 
 import time, os, uuid
 
 class Repotool:
+    """
+        libredo/Repotool
 
-    def __init__(self, _declaration, _branch_id=None):
-        """
-            a builder for yocto using docker to support builds on top of other builds
-        """
-        self.declaration = _declaration
+        Tool for checking out yocto-layers from git.
 
-        self.branch_id = _branch_id
-        if not self.branch_id:
-            self.branch_id = "%s-%s"%(time.strftime("%F-%H%M%S"), uuid.uuid1())
+        (This is not the android repo-tool, but 
+        a replacement thereof in the scope of Redomat.)
+    """
+
+    def __init__(self, declaration, syncid=None):
+        """
+            construct a Repotool instance.
+            
+            syncid - identifies one specific state of the git repositories
+        """
+
+        self._declaration = declaration
+
+        self._syncid = syncid
+        if not self._syncid:
+            self._syncid = "%s-%s"%(time.strftime("%F-%H%M%S"), uuid.uuid1())
 
     def set_declaration(self, decl):
         """
             set declaration
         """
-        self.declaration = decl
+        self._declaration = decl
+
+    def set_syncid(self, syncid):
+        self._syncid = syncid
 
     def checkout(self, destpath, git_url, revision):
         cmds = []
         cmds.append("""
-        if [ ! -d %s ] ; then
-            mkdir -pv %s
-            cd %s
-            [ ! -d .git ] && git init
-
-            git remote add declremote-$HOSTNAME %s
-            echo initially fetching remote: %s
-            git fetch declremote-$HOSTNAME
+        if [ ! -d {dest}/.git ] ; then
+            mkdir -pv {dest}
+            cd {dest}
+            git init
         else
-            cd %s
-            pwd
-            echo fetching remote: %s
-            git remote add declremote-$HOSTNAME %s
-            git fetch declremote-$HOSTNAME
-        fi"""%
-                (destpath, destpath, destpath, git_url, git_url, destpath, git_url, git_url))
-        if 'master' ==  revision:
-            revision = "declremote/master"
-        cmds.append("( echo checkout... ; cd %s ; git checkout -b declrev%s %s )"%
-                (destpath, self.branch_id, revision))
+            cd {dest}
+        fi
+
+        if [ ! -e .git/refs/heads/branch-{syncid} ]
+        then
+            git remote add remote-{syncid} {git_url} || true
+            echo fetching remote: remote-{syncid} from {git_url}
+            git fetch remote-{syncid}
+            git branch branch-{syncid} {rev}
+            git checkout branch-{syncid}
+        else
+            echo branch-{syncid} exists, not checking out
+        fi
+
+        """.format
+                (dest=destpath, git_url=git_url, syncid=self._syncid, rev=revision))
         return cmds
 
     def checkout_all(self, checkout_dir):
         cmds = []
 
-        baselayer = self.declaration.baselayer
+        baselayer = self._declaration.baselayer
         git_dir = "/".join((checkout_dir, baselayer['repo']))
-        remote = self.declaration.layer_remotes.get(baselayer['remote'])
+        remote = self._declaration.layer_remotes.get(baselayer['remote'])
         repo = baselayer['repo']
         revision = baselayer['revision']
         git_url = "".join([remote['baseurl'], repo])
         cmds.extend(self.checkout(git_dir, git_url, revision))
 
-        for layername, layer in self.declaration.layers.iteritems():
+        for layername, layer in self._declaration.layers.iteritems():
             assert(layername == layer['name'])
             git_dir = "/".join((checkout_dir, baselayer['repo'], layer["name"]))
-            remote = self.declaration.layer_remotes.get(layer['remote'])
+            remote = self._declaration.layer_remotes.get(layer['remote'])
             repo = layer['repo']
             revision = layer['revision']
             git_url = "".join([remote['baseurl'], repo])

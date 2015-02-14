@@ -12,7 +12,7 @@ redomat <option> <redomat.xml>
         print this help
 
     -c, --checkout
-        standalone checkout
+        standalone checkout mode
 
     -s, --stage=STAGE
         start building from STAGE
@@ -39,6 +39,7 @@ def main(argv):
     checkout_mode = False
 
     target_stage = None
+
     # spawn new redomat instance (docker client interface)
     redo = Redomat('unix://var/run/docker.sock')
 
@@ -89,9 +90,9 @@ def main(argv):
     redo.set_decl(decl)
 
     if checkout_mode:
-        repotool = Repotool(decl)
+        repotool = Repotool(decl, "standalone-%s"%os.getpid())
         for cmd in repotool.checkout_all("."):
-            print cmd
+            os.system(cmd)
         sys.exit(0)
 
     if not target_stage:

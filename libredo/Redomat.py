@@ -22,7 +22,7 @@ class Redomat:
         self.current_stage = None
         # current image name that is processed
 
-        # counter for container so the id's don't collide
+        # counter for container so the IDs don't collide
         self.run_sequence = 0
 
         # flag for image search-operation and selection
@@ -174,6 +174,7 @@ class Redomat:
             self.build_id = "%s-%s"%(time.strftime("%F-%H%M%S"), self.username)
             self.log(6, "build-id generated: [%s]"%self.build_id)
 
+        self.repotool.set_syncid(self.build_id)
         build_chain = self.generate_build_chain(stage)
 
         while build_chain:
@@ -364,7 +365,7 @@ class Redomat:
             The FROM line has to be present in entry-stages
             without prestages. This is the verbatim image specifier
             used by docker to start the first stage.
-            Unlike all other actions this line is not parsed here
+            Unlike other actions this line is not parsed in this place
             but during build-chain generation, hence it is a mistake
             if this code is reached.
         """

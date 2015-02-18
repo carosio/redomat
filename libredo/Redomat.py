@@ -380,8 +380,12 @@ class Redomat:
 
         # wait till the command is executed
         if self.dclient.wait(container=name) is not 0:
+            tag = "%s-%s-fail"%(self.current_stage, self._nextseq())
+            self.dclient.commit(container=name, repository=self.build_id, tag=tag)
             # raise Exception if the command exited with a non zero code
-            raise BuildException("Container " + name + " exited with a non zero exit status")
+            raise BuildException("""
+               Container %s exited with a non zero exit status
+               Container [%s] committed -> [%s]"""%(name,container_id, "%s:%s"%(self.build_id,tag))
 
         # commit the currently processed container
         tag = "%s-%s"%(self.current_stage, self._nextseq())

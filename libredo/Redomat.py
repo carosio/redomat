@@ -154,6 +154,23 @@ class Redomat:
                 fromline = stage['actions'].pop(0).strip()
                 if not fromline.startswith("FROM "):
                     raise BuildException("a stage without pre-stage lacks FROM")
+                tags = []
+                for x in self.dc().images(name=fromline.split(" ")[1].split(":")[0]):
+                    tags.append(x["Tag"])
+                image = fromline.split(" ")[1].split(":")[0]
+                tag = fromline.split(" ")[1].split(":")[1]
+                if tag not in tags:
+                    self.log(7, "could not find %s in local registry trying to locate it on dockerhub"%image)
+                    if [] != self.dc().search(image):
+                        self.log(7, "%s found on dockerhub"%image)
+                        self.log(7, "trying to pull %s:%s"%(image, tag))
+                        self.dc().pull(repository=image, tag=tag)
+                        tags = []
+                        for x in self.dc().images(name=fromline.split(" ")[1].split(":")[0]):
+                            tags.append(x["Tag"])
+                        if tag not in tags:
+                            raise Exception("%s:%s could not be obtained no such tag"%(image, tag))
+                        self.log(7, "successfully pulled %s:%s"%(image, tag))
                 chain.append((sid, fromline.split(" ")[1].strip()))
                 break
             if stage == self._entry_stage:
@@ -201,14 +218,8 @@ class Redomat:
                 self.log(6, "pre-image [%s] resolved to: %s"%(pre_image, image_id))
             except Exception, e: # FIXME catch more precisely
                 # image not found try to pull the image
-                try:
-                    self.log(5, "try pulling [%s%] from the docker registry"%(pre_image))
-                    image_name, image_tag = pre_image.split(":")
-                    self.dc().pull(repository=image_name,tag=image_tag)
-                    self.dc().tag(image_name + ":" + image_tag,self._current_image())
-                except:
-                    self.log(3, e.__str__())
-                    raise BuildException("cannot build. pre_image [%s] not accesible."%pre_image)
+                self.log(3, e.__str__())
+                raise BuildException("cannot build. pre_image [%s] not accesible."%pre_image)
 
             # tag the current image
             tag = "%s-%s"%(self.current_stage, self._seq())

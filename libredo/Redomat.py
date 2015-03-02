@@ -1,4 +1,4 @@
-import getpass, time, os, logging
+import getpass, time, os, logging, socket, sys
 from libredo import Repotool
 from libredo.ConfCreator import ConfCreator
 import xml.etree.ElementTree as XML
@@ -345,6 +345,65 @@ class Redomat:
         self.run_sequence = self.run_sequence + 1
         return "%03i"%self.run_sequence
 
+    def file_socket_send(self, message, filename):
+        """
+            create a container listening on a tcpsocket
+        """
+
+        name = self._current_container()
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        port = 8888
+
+        # create the container
+        container = self.dc().create_container(image=self._current_image(), name=name, command="/bin/bash -c \"socat -u tcp4-listen:{port} create:{name}\"".format(port=port, name=filename))
+        container_id = container.get('Id') or container.get('id')
+        self.log(4, "new container started [%s] from [%s]"%(container_id, self._current_image()))
+
+        # start the container
+        self.dc().start(container=name)
+
+        # getting the ip of the container
+        IP = self.dc().inspect_container(container=name)['NetworkSettings']['IPAddress']
+        server_address = (IP, port)
+
+        print >>sys.stderr, 'connecting to {IP} port {port}'.format(IP=IP,port=port)
+        # connecting to socket
+        for i in range(0, 9):
+            try:
+                sock.connect(server_address)
+            except socket.error as e:
+                self.log(5, "Could not connect to container {container}:".format(container=name))
+                self.log(5, "Reconnecting")
+                if e.errno == socket.errno.ECONNREFUSED:
+                    time.sleep(3)
+
+        # sending file
+        try:
+            print >>sys.stderr, 'sending"%s"'%message
+            sock.sendall(message)
+        except:
+            self.log(5, "Error while sending file: {name}".format(name=filename))
+            raise
+        finally:
+            print >>sys.stderr, 'closing socket'
+            sock.close()
+
+        # stop the container after the file is send
+        if self.dc().wait(container=name) is not 0:
+            tag = "%s-%s-fail"%(self.current_stage, self._nextseq())
+            self.dc().commit(container=name, repository=self.build_id, tag=tag)
+            # raise Exception if the command exited with a non zero code
+            raise BuildException("""Container {container} exited with non-zero exit-code.
+               Committed: [{container}] -> [{image}]
+               Log: docker logs -f {container_id}""". \
+                    format(container=name, container_id=container_id, image="%s:%s"%(self.build_id,tag)))
+        self.dc().stop(container=name)
+
+        # commit the currently processed container
+        tag = "%s-%s"%(self.current_stage, self._nextseq())
+        self.dc().commit(container=name, repository=self.build_id, tag=tag)
+        self.log(4, "container [%s] committed -> [%s]"%(container_id, "%s:%s"%(self.build_id,tag)))
+
     def CREATE_BBLAYERS(self, args):
         """
             create bblayers.conf
@@ -353,11 +412,9 @@ class Redomat:
         self.conf_creator.set_decl(self.decl)
         self.conf_creator.create_bblayers()
 
-        runcmd = "/bin/bash -c \'cat - > /REDO/build/conf/bblayers.conf <<-\"EOF\" \n %s \'"% \
-            self.conf_creator.bblayers
+        self.file_socket_send(self.conf_creator.bblayers, "/REDO/build/conf/bblayers.conf")
 
-        self.RUN(runcmd)
-        self.log(6, "RUN: %s"%runcmd)
+        self.log(6, "CREATING_BBLAYERS")
 
     def CREATE_LOCAL_CONF(self, args):
         """
@@ -366,11 +423,10 @@ class Redomat:
 
         self.conf_creator.set_decl(self.decl)
         self.conf_creator.create_local_conf()
-        runcmd = "/bin/bash -c \'cat - > /REDO/build/conf/local.conf <<\"EOF\" \n %s \'"% \
-            self.conf_creator.local_conf
 
-        self.log(6, "RUN: %s"%runcmd)
-        self.RUN(runcmd)
+        self.file_socket_send(self.conf_creator.local_conf, "/REDO/build/conf/local.conf")
+
+        self.log(6, "CREATING_LOCAL_CONF")
 
     def REPOSYNC(self, args):
         """

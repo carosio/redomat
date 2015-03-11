@@ -1,5 +1,5 @@
 import xml.etree.ElementTree as XML
-import os, uuid
+import os, uuid, logging
 
 class DeclarationError(Exception):
     pass
@@ -16,12 +16,24 @@ class Declaration:
         self.layer_remotes = {}
         self.extra_local_conf = ""
 
+        self.loglevel = logging.INFO
+        self.logformat = '%(asctime)s %(levelname)s: %(message)s'
+        logging.basicConfig(format=self.logformat, level=self.loglevel)
+
     def generate_stage_id(self):
         return "auto_stagename_%s"%uuid.uuid4()
 
     def log(self, severity, message):
-        # FIXME use logging framework
-        print message
+        if severity <= 2:
+            logging.critical(message)
+        elif severity == 3:
+            logging.error(message)
+        elif severity == 4:
+            logging.warning(message)
+        elif ( 4 < severity <= 6):
+            logging.info(message)
+        elif severity >= 7:
+            logging.debug(message)
 
     def parse(self, xml_file):
         """

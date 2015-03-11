@@ -1,4 +1,4 @@
-import getpass, time, os
+import getpass, time, os, logging
 from libredo import Repotool
 from libredo.ConfCreator import ConfCreator
 import xml.etree.ElementTree as XML
@@ -34,6 +34,9 @@ class Redomat:
         self.match_build_id = None
         self.dry_run = False
         self._entry_stage = None
+        self.loglevel = logging.INFO
+        self.logformat = '%(asctime)s %(levelname)s: %(message)s'
+        logging.basicConfig(format=self.logformat, level=self.loglevel)
 
         self.username = getpass.getuser()
 
@@ -51,14 +54,23 @@ class Redomat:
         self._entry_stage = s
 
     def log(self, severity, message):
-        # FIXME use logging framework
         m = []
         if self.build_id:
             m.append("[%s]"%self.build_id)
         if self.current_stage:
             m.append("(%s)"%self.current_stage)
         m.append(message)
-        print " ".join(m)
+
+        if severity <= 2:
+            logging.critical(" ".join(m))
+        elif severity == 3:
+            logging.error(" ".join(m))
+        elif severity == 4:
+            logging.warning(" ".join(m))
+        elif ( 4 < severity <= 6):
+            logging.info(" ".join(m))
+        elif severity >= 7:
+            logging.debug(" ".join(m))
 
     def set_decl(self, _decl):
         """

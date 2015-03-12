@@ -404,7 +404,7 @@ class Redomat:
         # create the container
         container = self.dc().create_container(image=self._current_image(), name=name, command=cmd)
         container_id = container.get('Id') or container.get('id')
-        self.log(4, "new container started [%s] from [%s]"%(container_id, self._current_image()))
+        self.log(6, "new container started [%s] from [%s]"%(container_id, self._current_image()))
 
         # start the container
         self.dc().start(container=name, privileged=True)
@@ -422,7 +422,7 @@ class Redomat:
         # commit the currently processed container
         tag = "%s-%s"%(self.current_stage, self._nextseq())
         self.dc().commit(container=name, repository=self.build_id, tag=tag)
-        self.log(4, "container [%s] committed -> [%s]"%(container_id, "%s:%s"%(self.build_id,tag)))
+        self.log(6, "container [%s] committed -> [%s]"%(container_id, "%s:%s"%(self.build_id,tag)))
 
     def ADD(self, parameter):
         """

@@ -40,7 +40,7 @@ class Redomat:
 
         self.username = getpass.getuser()
 
-        self.exposed_docker_commands = set(['CREATE_BBLAYERS','CREATE_LOCAL_CONF','REPOSYNC', 'FROM', 'RUN', 'ADD', 'WORKDIR', 'ENTRYPOINT'])
+        self.allowed_commands = set(['CREATE_BBLAYERS','CREATE_LOCAL_CONF','REPOSYNC', 'FROM', 'RUN', 'ADD', 'WORKDIR', 'ENTRYPOINT'])
 
     def dc(self):
         "return docker client instance (imports docker module)"
@@ -191,6 +191,62 @@ class Redomat:
         self.log(6, "build-chain: %s"%chain)
         return chain
 
+    def build_stage(self, stage, pre_image):
+        """
+            run all actions of a stage
+        """
+
+        stage_decl = self.decl.stage(stage)
+        if not stage_decl:
+            self.log(3, "unable to access declaration for stage [%s]"%stage)
+            raise BuildException("cannot build. stage [%s]. stage undeclared."%stage)
+
+        self.current_stage = stage
+
+        self.log(5, "starting build.")
+
+        # set the current image vatiable
+        self._resetseq()
+
+        # check pre-image
+        try:
+            pre_image_details = self.dc().inspect_image(pre_image)
+            # key changed from id to Id between 0.6.0 and following 
+            # docker client versions. we try to be compatible
+            image_id =  pre_image_details.get('Id') or  pre_image_details.get('id')
+            self.log(6, "pre-image [%s] resolved to: %s"%(pre_image, image_id))
+        except Exception, e: # FIXME catch more precisely
+            # image not found try to pull the image
+            self.log(3, e.__str__())
+            raise BuildException("cannot build. pre_image [%s] not accesible."%pre_image)
+
+        # tag the current image
+        tag = "%s-%s"%(self.current_stage, self._seq())
+        if not self.dry_run:
+            self.dc().tag(pre_image, self.build_id, tag=tag)
+            self.log(5, "successfully tagged %s as [%s@%s]"%(pre_image, self.build_id, tag))
+        else:
+            self.log(5, "successfully (not) tagged %s as [%s@%s]"%(pre_image, self.build_id, tag))
+
+        if False:
+            # just keeping some code which was never called
+            # (image_tag is used too early, this would throw)
+            try:
+                # if the tag cannot be created try to pull the image
+                print("pulling: " + image + ":" + image_tag)
+                image, image_tag = image.split(":")
+                self.dc().pull(repository=image,tag=image_tag)
+                self.dc().tag(image + ":" + image_tag,self._current_image())
+            except:
+                raise BuildException("The base image could not be found local or remote")
+
+        for action in stage_decl['actions']:
+            if not self.dry_run:
+                self.log(7, "executing action [%s]"%action)
+                self.handle_action(action)
+            else:
+                self.log(5, "(not) executing action [%s]"%action)
+
     def build(self, stage):
         """
             build the given stage.
@@ -206,59 +262,31 @@ class Redomat:
         self.repotool.set_syncid(self.build_id)
         build_chain = self.generate_build_chain(stage)
 
+        stage, pre_image = build_chain.pop()
+
+        self.build_stage(stage, pre_image)
+
+        # prepare for result serving
+        self.RUN("mkdir -p /REDO/results /REDO/source")
+        self.file_socket_send(self.build_id, "/REDO/source/BUILDID")
+
+        # add serve.sh
+        serve_script = open(os.path.join(os.path.split(__file__)[0], "data/serve.sh"))
+        self.file_socket_send(serve_script.read(), "/REDO/results/serve.sh", "unlink,mode=0755")
+        serve_script.close()
+
+        self.log(5, "stage actions completed. tagging: %s:%s"%(self.build_id, self.current_stage))
+        if not self.dry_run:
+            self.dc().tag(self._current_image(), self.build_id, self.current_stage)
+
+        #
+        # start building the stages
+        #
         while build_chain:
             stage, pre_image = build_chain.pop()
 
-            stage_decl = self.decl.stage(stage)
-            if not stage_decl:
-                self.log(3, "unable to access declaration for stage [%s]"%stage)
-                raise BuildException("cannot build. stage [%s]. stage undeclared."%stage)
+            self.build_stage(stage, pre_image)
 
-            self.current_stage = stage
-
-            self.log(5, "starting build.")
-
-            # set the current image vatiable
-            self._resetseq()
-
-            # check pre-image
-            try:
-                pre_image_details = self.dc().inspect_image(pre_image)
-                # key changed from id to Id between 0.6.0 and following 
-                # docker client versions. we try to be compatible
-                image_id =  pre_image_details.get('Id') or  pre_image_details.get('id')
-                self.log(6, "pre-image [%s] resolved to: %s"%(pre_image, image_id))
-            except Exception, e: # FIXME catch more precisely
-                # image not found try to pull the image
-                self.log(3, e.__str__())
-                raise BuildException("cannot build. pre_image [%s] not accesible."%pre_image)
-
-            # tag the current image
-            tag = "%s-%s"%(self.current_stage, self._seq())
-            if not self.dry_run:
-                self.dc().tag(pre_image, self.build_id, tag=tag)
-                self.log(5, "successfully tagged %s as [%s@%s]"%(pre_image, self.build_id, tag))
-            else:
-                self.log(5, "successfully (not) tagged %s as [%s@%s]"%(pre_image, self.build_id, tag))
-
-            if False:
-                # just keeping some code which was never called
-                # (image_tag is used too early, this would throw)
-                try:
-                    # if the tag cannot be created try to pull the image
-                    print("pulling: " + image + ":" + image_tag)
-                    image, image_tag = image.split(":")
-                    self.dc().pull(repository=image,tag=image_tag)
-                    self.dc().tag(image + ":" + image_tag,self._current_image())
-                except:
-                    raise BuildException("The base image could not be found local or remote")
-
-            for action in stage_decl['actions']:
-                if not self.dry_run:
-                    self.log(7, "executing action [%s]"%action)
-                    self.handle_action(action)
-                else:
-                    self.log(5, "(not) executing action [%s]"%action)
             self.log(5, "stage actions completed. tagging: %s:%s"%(self.build_id, self.current_stage))
             if not self.dry_run:
                 self.dc().tag(self._current_image(), self.build_id, self.current_stage)
@@ -318,7 +346,7 @@ class Redomat:
         docker_command = action.split(" ")
 
         # better check if the command is part of what we want to expose
-        if not docker_command[0] in self.exposed_docker_commands:
+        if not docker_command[0] in self.allowed_commands:
             raise Exception("unsupported command <%s>"%docker_command[0])
 
         # raise exception if there is no matching function
@@ -345,17 +373,23 @@ class Redomat:
         self.run_sequence = self.run_sequence + 1
         return "%03i"%self.run_sequence
 
-    def file_socket_send(self, message, filename):
+    def file_socket_send(self, data, filename, _options="unlink"):
         """
             create a container listening on a tcpsocket
         """
+
+        # FIXME use exec not run 
+        # install socat if needed
+        self.RUN("apt-get update")
+        self.RUN("apt-get install -y socat")
 
         name = self._current_container()
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         port = 8888
 
         # create the container
-        container = self.dc().create_container(image=self._current_image(), name=name, command="/bin/bash -c \"socat -u tcp4-listen:{port} create:{name}\"".format(port=port, name=filename))
+        container = self.dc().create_container(image=self._current_image(), name=name,
+                command="/bin/bash -c \"socat -u tcp4-listen:{port} create:{name},{options}\"".format(port=port, name=filename, options=_options))
         container_id = container.get('Id') or container.get('id')
         self.log(4, "new container started [%s] from [%s]"%(container_id, self._current_image()))
 
@@ -379,8 +413,7 @@ class Redomat:
 
         # sending file
         try:
-            print >>sys.stderr, 'sending"%s"'%message
-            sock.sendall(message)
+            sock.sendall(data)
         except socket.error as e:
             raise e
             raise Exception("Error while sending configuration file: {name}".format(name=filename))
@@ -403,6 +436,7 @@ class Redomat:
         tag = "%s-%s"%(self.current_stage, self._nextseq())
         self.dc().commit(container=name, repository=self.build_id, tag=tag)
         self.log(4, "container [%s] committed -> [%s]"%(container_id, "%s:%s"%(self.build_id,tag)))
+
 
     def CREATE_BBLAYERS(self, args):
         """

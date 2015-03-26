@@ -2,6 +2,7 @@ import getpass, time, os, logging, socket, sys
 from libredo import Repotool
 from libredo.ConfCreator import ConfCreator
 import xml.etree.ElementTree as XML
+from multiprocessing import Process
 
 class BuildException(Exception):
     pass
@@ -15,7 +16,7 @@ class Redomat:
         self.decl = None
         self._dclient = None
         self.service_url = service_url
-        self.service_version = "0.6.0"
+        self.service_version = "1.15"
         self.repotool = Repotool.Repotool(self.decl)
         self.conf_creator = ConfCreator(self.decl)
         # stage that is build
@@ -167,10 +168,13 @@ class Redomat:
                 if not fromline.startswith("FROM "):
                     raise BuildException("a stage without pre-stage lacks FROM")
                 tags = []
-                for x in self.dc().images(name=fromline.split(" ")[1].split(":")[0]):
-                    tags.append(x["Tag"])
                 image = fromline.split(" ")[1].split(":")[0]
                 tag = fromline.split(" ")[1].split(":")[1]
+                print(self.dc().images(name=image))
+                for y in self.dc().images(name=image):
+                    for x in y["RepoTags"]:
+                        tags.append(x.split(":")[1])
+                print(tags)
                 if tag not in tags:
                     self.log(7, "could not find %s in local registry trying to locate it on dockerhub"%image)
                     if [] != self.dc().search(image):
@@ -179,7 +183,7 @@ class Redomat:
                         self.dc().pull(repository=image, tag=tag)
                         tags = []
                         for x in self.dc().images(name=fromline.split(" ")[1].split(":")[0]):
-                            tags.append(x["Tag"])
+                            tags.append(x["RepoTags"])
                         if tag not in tags:
                             raise Exception("%s:%s could not be obtained no such tag"%(image, tag))
                         self.log(7, "successfully pulled %s:%s"%(image, tag))
@@ -205,9 +209,6 @@ class Redomat:
 
         self.log(5, "starting build.")
 
-        # set the current image vatiable
-        self._resetseq()
-
         # check pre-image
         try:
             pre_image_details = self.dc().inspect_image(pre_image)
@@ -221,24 +222,17 @@ class Redomat:
             raise BuildException("cannot build. pre_image [%s] not accesible."%pre_image)
 
         # tag the current image
-        tag = "%s-%s"%(self.current_stage, self._seq())
+        tag = self.current_stage
         if not self.dry_run:
             self.dc().tag(pre_image, self.build_id, tag=tag)
             self.log(5, "successfully tagged %s as [%s@%s]"%(pre_image, self.build_id, tag))
         else:
             self.log(5, "successfully (not) tagged %s as [%s@%s]"%(pre_image, self.build_id, tag))
 
-        if False:
-            # just keeping some code which was never called
-            # (image_tag is used too early, this would throw)
-            try:
-                # if the tag cannot be created try to pull the image
-                print("pulling: " + image + ":" + image_tag)
-                image, image_tag = image.split(":")
-                self.dc().pull(repository=image,tag=image_tag)
-                self.dc().tag(image + ":" + image_tag,self._current_image())
-            except:
-                raise BuildException("The base image could not be found local or remote")
+        name="%s-%s"%(self.build_id,self.current_stage)
+
+        self.container = self.dc().create_container(image="%s:%s"%(self.build_id,tag), name=name, command="/bin/bash -c 'touch /test && while [ -e /test ]; do sleep 3; done'")
+        container_id = self.container.get('Id') or self.container.get('id')
 
         for action in stage_decl['actions']:
             if not self.dry_run:
@@ -267,10 +261,11 @@ class Redomat:
         self.build_stage(stage, pre_image)
 
         # prepare for result serving
-        self.RUN("mkdir -p /REDO/results /REDO/source")
+        self.RUN('mkdir -p /REDO/source')
         self.file_socket_send(self.build_id, "/REDO/source/BUILDID")
 
         # add serve.sh
+        self.RUN("mkdir -p /REDO/results")
         serve_script = open(os.path.join(os.path.split(__file__)[0], "data/serve.sh"))
         self.file_socket_send(serve_script.read(), "/REDO/results/serve.sh", "unlink,mode=0755")
         serve_script.close()
@@ -278,6 +273,12 @@ class Redomat:
         self.log(5, "stage actions completed. tagging: %s:%s"%(self.build_id, self.current_stage))
         if not self.dry_run:
             self.dc().tag(self._current_image(), self.build_id, self.current_stage)
+
+        # commit the currently stage
+        tag = self.current_stage
+        name = "%s-%s"%(self.build_id,self.current_stage)
+        self.dc().commit(container=name, repository=self.build_id, tag=tag)
+        self.log(4, "container [%s] committed -> [%s]"%(name, "%s:%s"%(self.build_id,tag)))
 
         #
         # start building the stages
@@ -291,8 +292,23 @@ class Redomat:
             if not self.dry_run:
                 self.dc().tag(self._current_image(), self.build_id, self.current_stage)
 
+            # wait till the command is executed
+            if self.dc().wait(container=name) is not 0:
+                tag = "%s-fail"%(self.current_stage)
+                self.dc().commit(container=name, repository=self.build_id, tag=tag)
+                # raise Exception if the command exited with a non zero code
+                raise BuildException("""Container {container} exited with non-zero exit-code.
+                   Committed: [{container}] -> [{image}]
+                   Log: docker logs -f {container_id}""". \
+                        format(container=name, container_id=name, image="%s:%s"%(self.build_id,tag)))
+
+            # commit the currently processed container
+            tag = self.current_stage
+            self.dc().commit(container=name, repository=self.build_id, tag=tag)
+            self.log(4, "container [%s] committed -> [%s]"%(name, "%s:%s"%(self.build_id,tag)))
+
     def _current_image(self):
-        return "%s:%s-%s"%(self.build_id, self.current_stage, self._seq())
+        return "%s:%s"%(self.build_id, self.current_stage)
 
     def _current_container(self):
         return "%s-%s-%s"%(self.build_id, self.current_stage, self._seq())
@@ -357,22 +373,6 @@ class Redomat:
         # pass the commands to the redomat
         callback(" ".join(docker_command[1:]).strip())
 
-    def _resetseq(self):
-        self.run_sequence = 0
-
-    def _seq(self):
-        """
-            return current seq without incrementing
-        """
-        return "%03i"%self.run_sequence
-
-    def _nextseq(self):
-        """
-            counter for RUN command
-        """
-        self.run_sequence = self.run_sequence + 1
-        return "%03i"%self.run_sequence
-
     def file_socket_send(self, data, filename, _options="unlink"):
         """
             create a container listening on a tcpsocket
@@ -383,18 +383,22 @@ class Redomat:
         self.RUN("apt-get update")
         self.RUN("apt-get install -y socat")
 
-        name = self._current_container()
+        name = "%s-%s"%(self.build_id,self.current_stage)
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         port = 8888
+        cmd  = "socat -u tcp4-listen:{port} create:{name},{options}".format(port=port, name=filename, options=_options)
 
-        # create the container
-        container = self.dc().create_container(image=self._current_image(), name=name,
-                command="/bin/bash -c \"socat -u tcp4-listen:{port} create:{name},{options}\"".format(port=port, name=filename, options=_options))
-        container_id = container.get('Id') or container.get('id')
-        self.log(4, "new container started [%s] from [%s]"%(container_id, self._current_image()))
+        if self.dc().inspect_container(container=name)['State']['Running']:
+            self.log(5, 'Container {container} is already running'.fromat(container=name))
+        else:
+            self.dc().start(container=name, privileged=True)
 
-        # start the container
-        self.dc().start(container=name)
+        self.log(4, "running socat in the container")
+        process = Process(target=self.dc().execute, kwargs={'container':name, 'cmd':cmd})
+        process.start()
+        if not process.is_alive():
+           print process.exitcode
+           self.log(3, 'error executing socat')
 
         # getting the ip of the container
         IP = self.dc().inspect_container(container=name)['NetworkSettings']['IPAddress']
@@ -410,6 +414,10 @@ class Redomat:
                 self.log(5, "Reconnecting")
                 if e.errno == socket.errno.ECONNREFUSED:
                     time.sleep(3)
+                    continue
+                if e.errno == 106:
+                    break
+                raise
 
         # sending file
         try:
@@ -422,21 +430,15 @@ class Redomat:
             sock.close()
 
         # stop the container after the file is send
-        if self.dc().wait(container=name) is not 0:
-            tag = "%s-%s-fail"%(self.current_stage, self._nextseq())
-            self.dc().commit(container=name, repository=self.build_id, tag=tag)
-            # raise Exception if the command exited with a non zero code
-            raise BuildException("""Container {container} exited with non-zero exit-code.
-               Committed: [{container}] -> [{image}]
-               Log: docker logs -f {container_id}""". \
-                    format(container=name, container_id=container_id, image="%s:%s"%(self.build_id,tag)))
-        self.dc().stop(container=name)
+        self.dc().execute(container=name, cmd='rm /test')
 
-        # commit the currently processed container
-        tag = "%s-%s"%(self.current_stage, self._nextseq())
-        self.dc().commit(container=name, repository=self.build_id, tag=tag)
-        self.log(4, "container [%s] committed -> [%s]"%(container_id, "%s:%s"%(self.build_id,tag)))
+        while self.dc().inspect_container(container=name)['State']['Running']:
+            self.log(6, "Wait till container stops")
+            time.sleep(3)
 
+        process.join()
+
+        self.log(6, 'Container stoped')
 
     def CREATE_BBLAYERS(self, args):
         """
@@ -445,6 +447,8 @@ class Redomat:
 
         self.conf_creator.set_decl(self.decl)
         self.conf_creator.create_bblayers()
+
+        self.RUN('mkdir -p /REDO/build/conf')
 
         self.file_socket_send(self.conf_creator.bblayers, "/REDO/build/conf/bblayers.conf")
 
@@ -457,6 +461,8 @@ class Redomat:
 
         self.conf_creator.set_decl(self.decl)
         self.conf_creator.create_local_conf()
+
+        self.RUN('mkdir -p /REDO/build/conf')
 
         self.file_socket_send(self.conf_creator.local_conf, "/REDO/build/conf/local.conf")
 
@@ -489,30 +495,27 @@ class Redomat:
         """
             RUN command within a docker container
         """
-        name = self._current_container()
+        name ="%s-%s"%(self.build_id,self.current_stage)
 
-        # create the container
-        container = self.dc().create_container(image=self._current_image(), name=name, command=cmd)
-        container_id = container.get('Id') or container.get('id')
-        self.log(6, "new container started [%s] from [%s]"%(container_id, self._current_image()))
+        if self.dc().inspect_container(container=name)['State']['Running']:
+            self.log(5, 'Container {container} is already running'.fromat(container=name))
+        else:
+            self.dc().start(container=name, privileged=True)
 
-        # start the container
-        self.dc().start(container=name, privileged=True)
+        cmd='/bin/bash -c "%s ; echo $? > /status-code"'%cmd
 
-        # wait till the command is executed
-        if self.dc().wait(container=name) is not 0:
-            tag = "%s-%s-fail"%(self.current_stage, self._nextseq())
-            self.dc().commit(container=name, repository=self.build_id, tag=tag)
-            # raise Exception if the command exited with a non zero code
-            raise BuildException("""Container {container} exited with non-zero exit-code.
-               Committed: [{container}] -> [{image}]
-               Log: docker logs -f {container_id}""". \
-                    format(container=name, container_id=container_id, image="%s:%s"%(self.build_id,tag)))
+        self.log(6, "running %s"%(cmd))
+        self.dc().execute(container=name, cmd=cmd, tty=True)
 
-        # commit the currently processed container
-        tag = "%s-%s"%(self.current_stage, self._nextseq())
-        self.dc().commit(container=name, repository=self.build_id, tag=tag)
-        self.log(6, "container [%s] committed -> [%s]"%(container_id, "%s:%s"%(self.build_id,tag)))
+        status-code = self.dc().execute(container=name, cmd='cat /status-code')
+        self.log(1, status-code)
+
+        self.dc().execute(container=name, cmd='rm /test', tty=True)
+
+        while self.dc().inspect_container(container=name)['State']['Running']:
+            self.log(6, "Wait till container stops")
+            time.sleep(3)
+        self.log(6, 'Container stoped')
 
     def ADD(self, parameter):
         """
@@ -531,59 +534,15 @@ class Redomat:
         if os.path.exists(file_name) is False:
             raise Exception("No such file: " + file_name)
 
-        # split of the name of the file
-        file_name=os.path.basename(file_name)
-        # read the absolute path of the file dir of the stage
-        volume_path=self.decl.stage(self.current_stage)["basepath"] + "/" + self.current_stage
-        # set the name of the container being processed
-        name = "%s-%s-%s"%(self.build_id, self.current_stage, self._seq())
-
-        # create the container to create target dir
-        container = self.dc().create_container(image=self._current_image(), name=name, command="/bin/mkdir -pv " + os.path.dirname(target))
-        container_id = container.get('Id') or container.get('id')
-        self.log(4, "new container started [%s] from [%s]"%(container_id, self._current_image()))
-
-        # run the container
-        self.dc().start(container=name)
-
-        # commit when the container exited with a non zero exit code
-        if self.dc().wait(container=name) is not 0:
-            raise BuildException("Container " + name + " could not create a dir to use for th ADD command")
-        
-        tag = "%s-%s"%(self.current_stage, self._seq())
-        self.dc().commit(container=name, repository=self.build_id, tag=tag)
-        self.log(4, "container [%s] committed -> [%s]"%(container_id, "%s:%s"%(self.build_id,tag)))
-
-        # set the name of the container being processed
-        name = "%s-%s-%s-%s"%(self.build_id, self.current_stage, self._seq(), "copy")
-
-        # create the container to copy file
-        container = self.dc().create_container(image=self._current_image(), name=name, volumes=volume_path, command="cp -rv \"/files/" + file_name + "\" " + target)
-        container_id = container.get('Id') or container.get('id')
-        self.log(4, "new container started [%s] from [%s]"%(container_id, self._current_image()))
-
-        # start the container with the files dir of the stage connected as a volume
-        self.dc().start(container=name, binds={
-                volume_path:
-                    {
-                        'bind': '/files/',
-                        'ro': True
-                    }})
-
-        # commit when the container exited with a non zero exit code
-        if self.dc().wait(container=name) != 0:
-            # raise Exception if the command exited with a non zero code
-            raise BuildException("Container " + name + " exited with a non zero exit status")
-
-        tag = "%s-%s"%(self.current_stage, self._nextseq())
-        self.dc().commit(container=name, repository=self.build_id, tag=tag)
-        self.log(4, "container [%s] committed -> [%s]"%(container_id, "%s:%s"%(self.build_id,tag)))
+        f = open(file_name, 'r')
+        self.file_socket_send(f.read(), target)
+        f.close()
 
     def WORKDIR(self, directory):
         """
             set a WORKDIR for an image
         """
-
+        pass
         # set name for the current container being processed
         name = "%s-%s-%s"%(self.build_id, self.current_stage, self._seq())
 
@@ -605,7 +564,7 @@ class Redomat:
         """
             set entry point of image
         """
-
+        pass
         # set the name of the container being processed
         name = "%s-%s-%s"%(self.build_id, self.current_stage, self._seq())
 

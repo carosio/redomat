@@ -1,4 +1,4 @@
-import getpass, time, os
+import getpass, time, os, logging
 from libredo import Repotool
 from libredo.ConfCreator import ConfCreator
 import xml.etree.ElementTree as XML
@@ -34,6 +34,9 @@ class Redomat:
         self.match_build_id = None
         self.dry_run = False
         self._entry_stage = None
+        self.loglevel = logging.INFO
+        self.logformat = '%(asctime)s %(levelname)s: %(message)s'
+        logging.basicConfig(format=self.logformat, level=self.loglevel)
 
         self.username = getpass.getuser()
 
@@ -51,14 +54,23 @@ class Redomat:
         self._entry_stage = s
 
     def log(self, severity, message):
-        # FIXME use logging framework
         m = []
         if self.build_id:
             m.append("[%s]"%self.build_id)
         if self.current_stage:
             m.append("(%s)"%self.current_stage)
         m.append(message)
-        print " ".join(m)
+
+        if severity <= 2:
+            logging.critical(" ".join(m))
+        elif severity == 3:
+            logging.error(" ".join(m))
+        elif severity == 4:
+            logging.warning(" ".join(m))
+        elif ( 4 < severity <= 6):
+            logging.info(" ".join(m))
+        elif severity >= 7:
+            logging.debug(" ".join(m))
 
     def set_decl(self, _decl):
         """
@@ -392,7 +404,7 @@ class Redomat:
         # create the container
         container = self.dc().create_container(image=self._current_image(), name=name, command=cmd)
         container_id = container.get('Id') or container.get('id')
-        self.log(4, "new container started [%s] from [%s]"%(container_id, self._current_image()))
+        self.log(6, "new container started [%s] from [%s]"%(container_id, self._current_image()))
 
         # start the container
         self.dc().start(container=name, privileged=True)
@@ -410,7 +422,7 @@ class Redomat:
         # commit the currently processed container
         tag = "%s-%s"%(self.current_stage, self._nextseq())
         self.dc().commit(container=name, repository=self.build_id, tag=tag)
-        self.log(4, "container [%s] committed -> [%s]"%(container_id, "%s:%s"%(self.build_id,tag)))
+        self.log(6, "container [%s] committed -> [%s]"%(container_id, "%s:%s"%(self.build_id,tag)))
 
     def ADD(self, parameter):
         """

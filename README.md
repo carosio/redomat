@@ -38,7 +38,7 @@ Optionally you can specify a stage/milestone from a previous
 build (BUILDID) as a starting point for the build:
 
 ```
-redomat.py -s <STAGE> <BUILDID> <REDOMAT.XML>
+redomat.py -e <STAGE> -b <BUILDID> <REDOMAT.XML>
 ```
 
 ## How to serve build artifacts

@@ -7,15 +7,32 @@ from libredo import Declaration
 
 def usage():
     return """
-redomat <option> <redomat.xml>
+redomat.py [OPTIONS] <redomat.xml> [<redomat2.xml> ...]
+
+OPTIONS
     -h, --help
         print this help
 
     -c, --checkout
         standalone checkout mode
 
-    -s, --stage=STAGE
+    -n, --dry-run
+        do not build anything, just show what would be done
+
+    -B, --new-build-id=BID
+        set BID as build id (use with caution: id should be unique)
+
+    -b, --match-build-id=BID
+        use BID for matching/selecting images
+
+    -f, --foreign
+        use stage images from other users
+
+    -e, --entry=STAGE
         start building from STAGE
+
+    -t, --target=STAGE
+        build up to STAGE
 
     -l, --list=BID
         list all images that match a given BUILD-ID

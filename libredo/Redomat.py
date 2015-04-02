@@ -366,16 +366,21 @@ class Redomat:
         IP = self.dc().inspect_container(container=name)['NetworkSettings']['IPAddress']
         server_address = (IP, port)
 
-        print >>sys.stderr, 'connecting to {IP} port {port}'.format(IP=IP,port=port)
+        self.log(6, 'connecting to {IP} port {port}'.format(IP=IP,port=port))
         # connecting to socket
         for i in range(0, 9):
             try:
                 sock.connect(server_address)
             except socket.error as e:
-                self.log(5, "Could not connect to container {container}:".format(container=name))
-                self.log(5, "Reconnecting")
                 if e.errno == socket.errno.ECONNREFUSED:
+                    self.log(5, "retrying...")
                     time.sleep(3)
+                    continue
+                self.log(5, "Could not connect to container {container}: {errstr}".
+                        format(container=name, errstr=str(e)))
+                # re-raise unhandled exceptions:
+                raise
+            break
 
         # sending file
         try:

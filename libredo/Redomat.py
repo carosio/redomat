@@ -391,9 +391,8 @@ class Redomat:
         port = 8888
         cmd  = "socat -u tcp4-listen:{port} create:{name},{options}".format(port=port, name=filename, options=_options)
 
-        if self.dc().inspect_container(container=name)['State']['Running']:
-            self.log(5, 'Container {container} is already running'.fromat(container=name))
-        else:
+        if not self.dc().inspect_container(container=name)['State']['Running']:
+            self.log(5, 'Starting container {container} for socket-send...'.format(container=name))
             self.dc().start(container=name, privileged=True)
 
         self.log(4, "running socat in the container")
@@ -500,25 +499,17 @@ class Redomat:
         """
         name ="%s-%s"%(self.build_id,self.current_stage)
 
-        if self.dc().inspect_container(container=name)['State']['Running']:
-            self.log(5, 'Container {container} is already running'.fromat(container=name))
-        else:
+        if not self.dc().inspect_container(container=name)['State']['Running']:
+            self.log(5, 'Starting container {container} for RUN...'.format(container=name))
             self.dc().start(container=name, privileged=True)
 
-        cmd='/bin/bash -c "%s ; echo $? > /status-code"'%cmd
-
         self.log(6, "running %s"%(cmd))
-        self.dc().execute(container=name, cmd=cmd, tty=True)
+        output_stream, return_code_function = self.dc().better_execute(container=name, cmd=cmd, linebased=False)
 
-        status-code = self.dc().execute(container=name, cmd='cat /status-code')
-        self.log(1, status-code)
+        for chunk in output_stream:
+            self.log(6, "output: [%s]"%chunk.strip())
 
-        self.dc().execute(container=name, cmd='rm /test', tty=True)
-
-        while self.dc().inspect_container(container=name)['State']['Running']:
-            self.log(6, "Wait till container stops")
-            time.sleep(3)
-        self.log(6, 'Container stoped')
+        self.log(6, 'RUN/EXEC exit-code: %s'%return_code_function())
 
     def ADD(self, parameter):
         """

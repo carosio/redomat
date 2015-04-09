@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<redo>
+
+	<layer_declaration>
+		<remote name="github" baseurl="git://github.com/travelping/" />
+		<baselayer remote="github" revision="deadbeef" repo="hello_world.git" />
+	</layer_declaration>
+
+	<buildstage id="stage1">
+		<action>FROM ubuntu:14.04</action>
+		<action>RUN mkdir /REDO</action>
+		<action>RUN mkdir /REDO/build</action>
+		<action>RUN echo hello world</action>
+		<action>RUN find /etc</action>
+		<action>RUN mkdir /REDO/source</action>
+	</buildstage>
+
+	<buildstage id="stage2">
+		<prestage>stage1</prestage>
+		<action>RUN echo hello stage2</action>
+		<action>RUN echo hello 2 stage2</action>
+		<action>ADD /etc/passwd /foo-passwd</action>
+		<action>RUN echo hello 3 stage2</action>
+		<action>RUN echo hello 4 stage2</action>
+	</buildstage>
+
+</redo>

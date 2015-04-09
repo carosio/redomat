@@ -17,28 +17,32 @@ the same effect.
 
 
 ## DEPENDENCIES
-* docker-py [github](https://github.com/docker/docker-py)
-* docker [homepage](www.docker.com)
 * python
+* virtualenv [homepage](https://virtualenv.pypa.io/)
+* docker [homepage](www.docker.com)
+* GNUmake
 
 ## How to install
-To install the redomat use the setup.py:
+
 ```
-python setup.py install
+make install
 ```
+
+*redomat* gets installed into /usr/local per default; provide the DESTDIR
+variable to change the default location.
 
 ## How to use
 To use Redomat to build a target from a declaration, execute:
 
 ```
-redomat.py <REDOMAT.XML>
+redomat <REDOMAT.XML>
 ```
 
 Optionally you can specify a stage/milestone from a previous
 build (BUILDID) as a starting point for the build:
 
 ```
-redomat.py -e <STAGE> -b <BUILDID> <REDOMAT.XML>
+redomat -e <STAGE> -b <BUILDID> <REDOMAT.XML>
 ```
 
 ## How to serve build artifacts

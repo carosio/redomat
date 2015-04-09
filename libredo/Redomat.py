@@ -384,13 +384,13 @@ class Redomat:
 
         # sending file
         try:
-            print >>sys.stderr, 'sending"%s"'%message
+            self.log(7, 'sending"%s"'%message)
             sock.sendall(message)
         except:
             self.log(3, "Error while sending file: {name}".format(name=filename))
             raise
         finally:
-            print >>sys.stderr, 'closing socket'
+            self.log(7, 'closing socket')
             sock.close()
 
         # stop the container after the file is send

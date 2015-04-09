@@ -49,6 +49,9 @@ class Redomat:
             if 'docker' not in dir():
                 import docker
             self._dclient = docker.Client(base_url=self.service_url,version=self.service_version,timeout=2400)
+            # monkey patch our client.execute improvement
+            from libredo._docker_py import better_docker_execute
+            self._dclient.__class__.better_execute = better_docker_execute
         return self._dclient
 
     def set_entry_stage(self, s):

@@ -1,6 +1,6 @@
 #!/bin/bash -e
 #
-# This script is to be used inside the build-container
+# This part of the script is to be used inside the build-container
 # to collect the build-results before they are going
 # to be exposed via HTTP.
 #
@@ -18,11 +18,24 @@
 # This contains packages, images, logs.
 #
 
-TIMESTAMP=$(date +%H%M%S)
-
+BUILDID=`cat /REDO/source/BUILDID`
 RESULTID=`cat /REDO/source/BUILDID`
+RESULTBASEDIR="/REDO/results"
+RESULTDIR="$RESULTBASEDIR/$RESULTID"
 
-RESULTDIR="/REDO/results/$RESULTID"
+i=1
+
+while true;
+do
+    IFS='-' read -ra RESULTID <<< "$RESULTID"
+    if [ -d "$RESULTDIR" ]; then
+        RESULTID="$BUILDID-$i"
+        RESULTDIR="$RESULTBASEDIR/$RESULTID"
+    else
+        break
+    fi
+    i=$((i+1))
+done
 
 mkdir -pv "$RESULTDIR"
 
@@ -65,3 +78,23 @@ echo
 find $RESULTDIR
 echo
 
+# This part of the script ist used to serve the collected artifacts.
+#
+# The build artifacts will be served on the IP address of the docker
+# container at the port set below.
+#
+# The content of ${RESULTBASEDIR} will be served
+#
+
+IP=$(ifconfig eth0 | grep "inet addr" | cut -d: -f2 | awk '{ print $1}')
+PORT=80
+
+echo "Serving build artifacts at: "
+echo
+echo $IP:$PORT
+echo
+echo "on your local machine "
+
+[ ! -d $RESULTBASEDIR ] && echo "Cant find repo directory: $RESULTBASEDIR" && exit 1
+
+webfsd -F -p $PORT -r $RESULTBASEDIR

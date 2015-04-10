@@ -375,6 +375,18 @@ class Redomat:
         # pass the commands to the redomat
         return callback(" ".join(docker_command[1:]).strip())
 
+    def file_send(self, data, filename, _options="unlink"):
+        """ send data into a file in the container """
+        execres = self.dc().better_execute(self.container_id, 'dd of="%s"'%filename)
+
+        # send file
+        insock = execres.input_sock()
+        insock.sendall(data)
+        insock.shutdown(socket.SHUT_WR) # send EOF
+        self.log(6, "sent data to {filename} in container {cid}".format(filename=filename, cid=self.container_id[:8]))
+        return execres.exit_code()
+
+
     def file_socket_send(self, data, filename, _options="unlink"):
         """
             create a container listening on a tcpsocket
@@ -451,7 +463,7 @@ class Redomat:
 
         self.RUN('mkdir -p /REDO/build/conf')
 
-        self.file_socket_send(self.conf_creator.bblayers, "/REDO/build/conf/bblayers.conf")
+        self.file_send(self.conf_creator.bblayers, "/REDO/build/conf/bblayers.conf")
 
         self.log(6, "CREATING_BBLAYERS")
         return True
@@ -466,7 +478,7 @@ class Redomat:
 
         self.RUN('mkdir -p /REDO/build/conf')
 
-        self.file_socket_send(self.conf_creator.local_conf, "/REDO/build/conf/local.conf")
+        self.file_send(self.conf_creator.local_conf, "/REDO/build/conf/local.conf")
 
         self.log(6, "CREATING_LOCAL_CONF")
         return True
@@ -508,12 +520,12 @@ class Redomat:
             self.dc().start(container=cid, privileged=True)
 
         self.log(6, "running %s"%(cmd))
-        output_stream, return_code_function = self.dc().better_execute(container=cid, cmd=cmd, linebased=False)
+        execres = self.dc().better_execute(container=cid, cmd=cmd, linebased=False)
 
-        for chunk in output_stream:
+        for chunk in execres.output_gen:
             self.log(6, "output: [%s]"%chunk.strip())
 
-        rc = return_code_function()
+        rc = execres.exit_code()
         self.log(6, 'RUN/EXEC exit-code: %s'%rc)
         return rc == 0
 
@@ -536,7 +548,7 @@ class Redomat:
             raise Exception("No such file: " + file_name)
 
         f = open(file_name, 'r')
-        self.file_socket_send(f.read(), target)
+        self.file_send(f.read(), target)
         f.close()
         return True
 

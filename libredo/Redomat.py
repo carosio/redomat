@@ -285,7 +285,7 @@ class Redomat:
 
         # create container with some bogus loop, this will change to some httpd
         res = self.dc().create_container(image=pre_image, name=self.build_id,
-                command="/bin/bash -c 'while true ; do sleep 1 ;date; done'")
+                command="/bin/bash -c 'while [ ! -e /REDO/container-terminated ] ; do sleep 1 ;date; done'")
         self.container_id = res['Id']
         self.dc().start(container=self.container_id, privileged=True)
 
@@ -310,6 +310,7 @@ class Redomat:
             stage, pre_image = build_chain.pop()
 
             self.build_stage(stage, pre_image)
+        self.dc().better_execute(self.container_id, 'touch /REDO/container-terminated')
 
     def _current_image(self):
         return "%s:%s"%(self.build_id, self.current_stage)

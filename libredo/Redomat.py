@@ -130,14 +130,13 @@ class Redomat:
             that a rebuild of the stage is necessary.
         """
 
-        if self.match_build_id:
-            expectation = "%s:%s"%(self.match_build_id, stage)
-            if expectation in self.find_images_by_stage(stage=stage):
-                self.log(6, "matched [%s]"%expectation)
-                return expectation
-        else:
-            # TODO implement some heuristic to pick any matching stage
-            pass
+        if not self.match_build_id:
+            return None
+        self.log(6, "trying to match [%s - %s]"%(stage, self.match_build_id))
+        for image in self.find_images_by_pattern(self.match_build_id):
+            if stage in map(lambda x:x.split(":")[-1], image['RepoTags']):
+                self.log(6, "MATCH image: {img}".format(img=image['Id']))
+                return image['Id']
         return None
 
     def generate_build_chain(self, target):
@@ -328,16 +327,6 @@ class Redomat:
         else:
             pattern = "*-%s-*"%self.username
         return self.find_images_by_pattern(pattern)
-
-    def find_images_by_stage(self, stage):
-        if self.include_foreigns:
-            pattern = "*-*"
-        else:
-            pattern = "*-%s"%self.username
-        # filter for requested stage
-        for image in self.find_images_by_pattern(pattern):
-            if image.get('Tag') == stage:
-                yield "%s:%s"%(image.get('Repository'),image.get('Tag'))
 
     def find_images_by_pattern(self, pattern):
         for image in self.dc().images(name=pattern):

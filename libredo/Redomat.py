@@ -374,7 +374,7 @@ class Redomat:
         insock.sendall(data)
         insock.shutdown(socket.SHUT_WR) # send EOF
         self.log(6, "sent data to {filename} in container {cid}".format(filename=filename, cid=self.container_id[:8]))
-        return execres.exit_code()
+        return execres.exit_code() == 0
 
 
     def file_socket_send(self, data, filename, _options="unlink"):
@@ -517,10 +517,8 @@ class Redomat:
 
         self.RUN('mkdir -p /REDO/build/conf')
 
-        self.file_send(self.conf_creator.bblayers, "/REDO/build/conf/bblayers.conf")
-
         self.log(6, "CREATING_BBLAYERS")
-        return True
+        return self.file_send(self.conf_creator.bblayers, "/REDO/build/conf/bblayers.conf")
 
     def CREATE_LOCAL_CONF(self, args):
         """
@@ -532,10 +530,8 @@ class Redomat:
 
         self.RUN('mkdir -p /REDO/build/conf')
 
-        self.file_send(self.conf_creator.local_conf, "/REDO/build/conf/local.conf")
-
         self.log(6, "CREATING_LOCAL_CONF")
-        return True
+        return self.file_send(self.conf_creator.local_conf, "/REDO/build/conf/local.conf")
 
     def REPOSYNC(self, args):
         """
@@ -545,8 +541,9 @@ class Redomat:
         self.repotool.set_declaration(self.decl)
         cmds = self.repotool.checkout_all("/REDO/source")
         for cmd in cmds:
-            self.RUN("/bin/bash -c \"%s\""%cmd)
             self.log(6, "RUN /bin/bash -c \"%s\""%cmd)
+            if not self.RUN("/bin/bash -c \"%s\""%cmd):
+                return False
         return True
 
     def FROM(self, image):
@@ -589,28 +586,32 @@ class Redomat:
         """
 
         # split filename and target
-        file_name, target = parameter.split()
-        # add the directory of the current stage to the filename
-        if file_name[0] != '/':
-            file_name = self.decl.stage(self.current_stage)["basepath"] + "/" + self.current_stage + "/" + file_name
-        # check if the file exists
-        if target is None:
-            raise Exception("No target directory given")
-        if file_name is None:
-            raise Exception("No filename given")
-        if os.path.exists(file_name) is False:
-            raise Exception("No such file: " + file_name)
+        source, target = parameter.split()
 
-        f = open(file_name, 'r')
-        self.file_send(f.read(), target)
+        if not source:
+            raise Exception("ADD: no source filename specified.")
+
+        if not target:
+            raise Exception("ADD: no target filename specified")
+
+        # support relative paths
+        if source[0] != '/':
+            source = self.decl.stage(self.current_stage)["basepath"] + "/" + self.current_stage + "/" + source
+
+        # check if the file exists
+        if not os.path.exists(source):
+            raise Exception("ADD: specified source file does not exist: %s"%source)
+
+        f = open(source, 'r')
+        rc = self.file_send(f.read(), target)
+        self.log(6, 'ADD: %s.'%{True: "succeeded", False: "failed"}[rc])
         f.close()
-        return True
+        return rc
 
     def WORKDIR(self, directory):
         """
             set a WORKDIR for an image
         """
-        pass
         # set name for the current container being processed
         name = "%s-%s-%s"%(self.build_id, self.current_stage, self._seq())
 
@@ -633,7 +634,6 @@ class Redomat:
         """
             set entry point of image
         """
-        pass
         # set the name of the container being processed
         name = "%s-%s-%s"%(self.build_id, self.current_stage, self._seq())
 

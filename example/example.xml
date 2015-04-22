@@ -11,7 +11,7 @@
 		<action>RUN mkdir /REDO</action>
 		<action>RUN mkdir /REDO/build</action>
 		<action>RUN echo hello world</action>
-		<action>RUN find /etc</action>
+		<action>RUN find /etc/init.d</action>
 		<action>RUN mkdir /REDO/source</action>
 	</buildstage>
 
@@ -22,6 +22,14 @@
 		<action>ADD /etc/passwd /foo-passwd</action>
 		<action>RUN echo hello 3 stage2</action>
 		<action>RUN echo hello 4 stage2</action>
+	</buildstage>
+
+	<buildstage id="stage3">
+		<prestage>stage2</prestage>
+		<action>RUN echo hello stage3</action>
+		<action>RUN echo hello 2 stage3</action>
+		<action>RUN echo hello 3 stage3</action>
+		<action>RUN echo hello 4 stage3</action>
 	</buildstage>
 
 </redo>

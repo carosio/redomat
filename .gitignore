@@ -1,2 +1,6 @@
 *.pyc
 *.swp
+venv
+dist
+build
+pyinstall-log.txt

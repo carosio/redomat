@@ -77,7 +77,7 @@ class PackagesHTTPD(SimpleHTTPRequestHandler):
         self.send_header('Content-type', 'application/x-tar')
         self.end_headers()
 
-        tfile.add(folder)
+        tfile.add(folder, arcname='packages')
         tfile.close()
 
 

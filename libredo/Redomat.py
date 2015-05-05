@@ -367,12 +367,12 @@ class Redomat:
 
     def file_send(self, data, filename, _options="unlink"):
         """ send data into a file in the container """
-        execres = self.dc().better_execute(self.container_id, 'dd of="%s"'%filename)
+        execres = self.dc().better_execute(self.container_id, 'dd of="%s"'%filename, attach_stdin=True)
 
         # send file
         insock = execres.input_sock()
         insock.sendall(data)
-        insock.shutdown(socket.SHUT_WR) # send EOF
+        execres.close_input()
         self.log(6, "sent data to {filename} in container {cid}".format(filename=filename, cid=self.container_id[:8]))
         return execres.exit_code() == 0
 

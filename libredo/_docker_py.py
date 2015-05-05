@@ -19,6 +19,7 @@ print "return code:", rc()
 
 import six, docker, shlex
 import io
+import socket
 
 # http://stackoverflow.com/questions/6657820/python-convert-an-iterable-to-a-stream
 def iterable_to_stream(iterable, buffer_size=io.DEFAULT_BUFFER_SIZE):
@@ -45,13 +46,13 @@ def iterable_to_stream(iterable, buffer_size=io.DEFAULT_BUFFER_SIZE):
                 return 0    # indicate EOF
     return io.BufferedReader(IterStream(), buffer_size=buffer_size)
 
-def better_docker_execute(self_dc, container, cmd, linebased=True):
+def better_docker_execute(self_dc, container, cmd, linebased=True, attach_stdin=False):
     if isinstance(cmd, six.string_types):
         cmd = shlex.split(str(cmd))
     data = {
         'Privileged':True,
         #'Tty': False,
-        'AttachStdin': True,
+        'AttachStdin': attach_stdin,
         'AttachStdout': True,
         'AttachStderr': True,
         'Cmd': cmd
@@ -68,6 +69,13 @@ def better_docker_execute(self_dc, container, cmd, linebased=True):
     self_dc._raise_for_status(res)
     raw = self_dc._get_raw_response_socket(res)
 
+
+    def close_write_half():
+        raw.shutdown(socket.SHUT_WR)
+
+    if not attach_stdin:
+        close_write_half()
+
     if linebased:
         stream_gen = iterable_to_stream(stream_gen)
 
@@ -75,6 +83,7 @@ def better_docker_execute(self_dc, container, cmd, linebased=True):
         output_gen = stream_gen
         @staticmethod
         def exit_code():
+            close_write_half()
             # drop all non-consumed output
             for chunk in stream_gen: pass
 
@@ -87,6 +96,11 @@ def better_docker_execute(self_dc, container, cmd, linebased=True):
         @staticmethod
         def input_sock():
             return raw
+
+        @staticmethod
+        def close_input():
+            close_write_half()
+
             
     return ExecResult
 # vim:expandtab

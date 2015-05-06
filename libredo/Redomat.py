@@ -127,22 +127,24 @@ class Redomat:
         """
         self.build_id = _buildid
 
+    def get_image(self, repo_tag):
+        """
+            return the image id for the given repo:tag
+        """
+        for image in self.dc().images():
+            if repo_tag in image['RepoTags']:
+                return image['Id']
+
     def resolve_stage_to_image(self, stage):
         """
             this function takes a stage-id from the stage-declaration
             as input and tries to find a matching image.
-            the matching strategy depends on upgrade_repo_tag, match_build_id,
-            the username and the include_foreigns option.
+            the matching strategy depends on match_build_id, the username
+            and the include_foreigns option.
 
             if no image is found None is returned. this usually means
             that a rebuild of the stage is necessary.
         """
-
-        if self.upgrade_repo_tag:
-            for image in self.dc().images():
-                if self.upgrade_repo_tag in image['RepoTags']:
-                    self.log(6, "using %s as base for upgrade"%(self.upgrade_repo_tag))
-                    return image['Id']
 
         if not self.match_build_id:
             return None
@@ -170,6 +172,13 @@ class Redomat:
             assert(type(stage) == dict)
 
             prestage = stage.get("prestage")
+
+            if self.upgrade_repo_tag:
+                if (not self._entry_stage) or self._entry_stage == prestage:
+                    self.log(6, "using %s as base for upgrade"%(self.upgrade_repo_tag))
+                    chain.append((sid, self.get_image(self.upgrade_repo_tag)))
+                    break
+
             if prestage:
                 prestage_image = self.resolve_stage_to_image(prestage)
                 if prestage_image:

@@ -35,6 +35,7 @@ class Redomat:
         # some options, see accessor function for details
         self.build_id = None
         self.match_build_id = None
+        self.upgrade_repo_tag = None
         self.dry_run = False
         self._entry_stage = None
         self.loglevel = logging.INFO
@@ -110,6 +111,13 @@ class Redomat:
         """
         self.match_build_id = _buildid
 
+    def set_upgrade_repo_tag(self, _repoTag):
+        """
+            set repo:tag to be used as base image
+            for upgrade
+        """
+        self.upgrade_repo_tag = _repoTag
+
     def set_build_id(self, _buildid):
         """
             set the actual build-id of the new build.
@@ -123,12 +131,18 @@ class Redomat:
         """
             this function takes a stage-id from the stage-declaration
             as input and tries to find a matching image.
-            the matching strategy depends on match_build_id, the username
-            and the include_foreigns option.
+            the matching strategy depends on upgrade_repo_tag, match_build_id,
+            the username and the include_foreigns option.
 
             if no image is found None is returned. this usually means
             that a rebuild of the stage is necessary.
         """
+
+        if self.upgrade_repo_tag:
+            for image in self.dc().images():
+                if self.upgrade_repo_tag in image['RepoTags']:
+                    self.log(6, "using %s as base for upgrade"%(self.upgrade_repo_tag))
+                    return image['Id']
 
         if not self.match_build_id:
             return None

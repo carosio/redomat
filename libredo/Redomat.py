@@ -336,7 +336,8 @@ class Redomat:
     def list_all_buildID(self):
         build_ids = []
         for image in self.dc().images(all=True):
-            build_ids.append(image['Repository'])
+            for tag in image['RepoTags']:
+                build_ids.append(tag.split(":")[0])
         build_ids=list(set(build_ids))
         for ID in build_ids:
             if '<none>' != ID:

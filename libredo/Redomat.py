@@ -35,6 +35,7 @@ class Redomat:
         # some options, see accessor function for details
         self.build_id = None
         self.match_build_id = None
+        self.upgrade_repo_tag = None
         self.dry_run = False
         self._entry_stage = None
         self.loglevel = logging.INFO
@@ -110,6 +111,13 @@ class Redomat:
         """
         self.match_build_id = _buildid
 
+    def set_upgrade_repo_tag(self, _repoTag):
+        """
+            set repo:tag to be used as base image
+            for upgrade
+        """
+        self.upgrade_repo_tag = _repoTag
+
     def set_build_id(self, _buildid):
         """
             set the actual build-id of the new build.
@@ -118,6 +126,14 @@ class Redomat:
             if this function is not used.
         """
         self.build_id = _buildid
+
+    def get_image(self, repo_tag):
+        """
+            return the image id for the given repo:tag
+        """
+        for image in self.dc().images():
+            if repo_tag in image['RepoTags']:
+                return image['Id']
 
     def resolve_stage_to_image(self, stage):
         """
@@ -156,6 +172,13 @@ class Redomat:
             assert(type(stage) == dict)
 
             prestage = stage.get("prestage")
+
+            if self.upgrade_repo_tag:
+                if (not self._entry_stage) or self._entry_stage == prestage:
+                    self.log(6, "using %s as base for upgrade"%(self.upgrade_repo_tag))
+                    chain.append((sid, self.get_image(self.upgrade_repo_tag)))
+                    break
+
             if prestage:
                 prestage_image = self.resolve_stage_to_image(prestage)
                 if prestage_image:

@@ -25,6 +25,10 @@ OPTIONS
     -b, --match-build-id=BID
         use BID for matching/selecting images
 
+    -U, --upgrade=repo:tag
+        use repo:tag as base image for upgrade
+        On default, only build last stage. Use -e if required.
+
     -f, --foreign
         use stage images from other users
 
@@ -45,8 +49,8 @@ OPTIONS
 def main(argv):
     # evaluate passed flags
     try:
-        opts, args = getopt.getopt(argv,"hcniLl:e:t:b:B:",
-                ["help", "checkout", "dry-run", "images", "list=", "list-bids", "entry=", "target=", "match-build-id", "new-build-id="])
+        opts, args = getopt.getopt(argv,"hcniLl:e:t:b:B:U:",
+                ["help", "checkout", "dry-run", "images", "list=", "list-bids", "entry=", "target=", "match-build-id", "new-build-id=", "upgrade="])
     except getopt.GetoptError, e:
         print(e)
         print(usage())
@@ -73,6 +77,8 @@ def main(argv):
             redo.set_build_id(arg)
         elif opt in ['-b', '--match-build-id']:
             redo.set_match_build_id(arg)
+        elif opt in ['-U', '--upgrade']:
+            redo.set_upgrade_repo_tag(arg)
         elif opt in ['-f', '--foreign']:
             # this will allow redomat to select matching stage-images
             # from other users too

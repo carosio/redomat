@@ -67,34 +67,9 @@ done
 gzip $RESULTDIR/package-logs.tar
 echo "[$RESULTDIR/package-logs.tar.gz] completed."
 
-cd /REDO/build/tmp/deploy/ipk
-
-echo "creating archive of packages..."
-find . -name "*ipk" -type f | tar rf $RESULTDIR/packages.tar -T -
-echo "[$RESULTDIR/packages.tar] completed."
-
 echo "DONE:"
 echo
 find $RESULTDIR
 echo
 
-# This part of the script ist used to serve the collected artifacts.
-#
-# The build artifacts will be served on the IP address of the docker
-# container at the port set below.
-#
-# The content of ${RESULTBASEDIR} will be served
-#
-
-IP=$(ifconfig eth0 | grep "inet addr" | cut -d: -f2 | awk '{ print $1}')
-PORT=80
-
-echo "Serving build artifacts at: "
-echo
-echo $IP:$PORT
-echo
-echo "on your local machine "
-
-[ ! -d $RESULTBASEDIR ] && echo "Cant find repo directory: $RESULTBASEDIR" && exit 1
-
-webfsd -F -p $PORT -r $RESULTBASEDIR
+python /REDO/results/result_httpd.py 80 /REDO/results/$BUILDID /REDO/build/tmp/deploy/ipk

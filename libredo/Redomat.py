@@ -317,14 +317,22 @@ class Redomat:
         #success = self.build_stage(stage, pre_image)
 
         # prepare for result serving
-        #self.RUN('mkdir -p /REDO/source')
-        #self.file_socket_send(self.build_id, "/REDO/source/BUILDID")
+        self.RUN('mkdir -p /REDO/source')
+        self.file_send(self.build_id, "/REDO/source/BUILDID")
 
         # add serve.sh
-        #self.RUN("mkdir -p /REDO/results")
-        #serve_script = open(os.path.join(os.path.split(__file__)[0], "data/serve.sh"))
-        #self.file_socket_send(serve_script.read(), "/REDO/results/serve.sh", "unlink,mode=0755")
-        #serve_script.close()
+	self.RUN("mkdir -p /REDO/results")
+        serve_script = open(os.path.join(os.path.split(__file__)[0], "data/serve.sh"))
+        self.file_send(serve_script.read(), "/REDO/results/serve.sh", "unlink,mode=0755")
+        self.RUN("chmod +x /REDO/results/serve.sh")
+
+        serve_script.close()
+
+        # add result_httpd.py
+        self.RUN("mkdir -p /REDO/results")
+        serve_script = open(os.path.join(os.path.split(__file__)[0], "data/result_httpd.py"))
+        self.file_send(serve_script.read(), "/REDO/results/result_httpd.py", "unlink,mode=0755")
+        serve_script.close()
 
         #
         # start building the stages

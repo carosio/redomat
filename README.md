@@ -53,8 +53,7 @@ more. It is possible to serve these build artifacts via the
 Docker container used for building:
 
 ```
-docker run --rm -ti -d -p <hostport>:80 <IMAGE> /build/serve.sh
-redomat.py --serve <BUILDID>
+docker run --rm -ti -p <hostport>:80 <IMAGE> /REDO/results/serve.sh
 ```
 
 This will make the build artifacts accessible on `http://localhost:<hostport>`

@@ -11,6 +11,8 @@ __version__ = ''
 import sys
 import os, os.path
 import zipfile, tarfile
+from StringIO import StringIO
+import cgi
 try:
     from http.server import SimpleHTTPRequestHandler, HTTPServer
 except ImportError: # assume py2
@@ -40,6 +42,39 @@ class PackagesHTTPD(SimpleHTTPRequestHandler):
             return
 
         SimpleHTTPRequestHandler.do_GET(self)
+
+    def list_directory(self, path):
+        try:
+            list = os.listdir(path)
+        except os.error:
+            self.send_error(404, "No permission to list directory")
+            return None
+        if path == self.server.chroot:
+	    list.append("packages/")
+	    list.append("packages.tar")
+
+        list.sort(lambda a, b: cmp(a.lower(), b.lower()))
+        f = StringIO()
+        f.write("<title>Directory listing for %s</title>\n" % self.path)
+        f.write("<h2>Directory listing for %s</h2>\n" % self.path)
+        f.write("<hr>\n<ul>\n")
+        for name in list:
+            fullname = os.path.join(path, name)
+            displayname = linkname = name = cgi.escape(name)
+            # Append / for directories or @ for symbolic links
+            if os.path.isdir(fullname):
+                displayname = name + "/"
+                linkname = name + "/"
+            if os.path.islink(fullname):
+                displayname = name + "@"
+                # Note: a link to a directory displays with @ and links with /
+            f.write('<li><a href="%s">%s</a>\n' % (linkname, displayname))
+        f.write("</ul>\n<hr>\n")
+        f.seek(0)
+        self.send_response(200)
+        self.send_header("Content-type", "text/html")
+        self.end_headers()
+        return f
 
     def translate_path(self, path):
         '''

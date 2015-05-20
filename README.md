@@ -6,8 +6,8 @@ Redomat is a tool which provides an environment for doing reproducable
 builds, integration and testing of targets. A target usually is a
 Linux based system designed for a special purpose.
 
-Reproducability is achieved by employing Docker (including its Python-API
-and GIT (including repo-tool), and Yocto for actually building.
+Reproducability is achieved by employing Docker (including its
+Python-API and GIT, and Yocto for actually building.
 The target specification is provided as XML file which may reference 
 additional files. The declaration may define build-stages (like build 
 milestones) which will be accessible as docker-commits/images.
@@ -18,7 +18,6 @@ the same effect.
 
 ## DEPENDENCIES
 * python
-* virtualenv [homepage](https://virtualenv.pypa.io/)
 * docker [homepage](www.docker.com)
 * GNUmake
 

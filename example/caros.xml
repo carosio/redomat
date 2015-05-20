@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<redo>
+	<layer_declaration>
+
+		<remote baseurl="git://git.yoctoproject.org/" name="yocto" />
+		<remote baseurl="git://github.com/carosio/" name="github"/>
+
+		<baselayer
+			repo="poky"
+			revision="refs/tags/dizzy-12.0.1"
+			remote="yocto" />
+
+		<layer name="meta-caros"
+			repo="meta-caros"
+			revision="44ddf6dbd03d4dae65de8a8d3de26f04e65b7553"
+			remote="github" />
+
+		<layer name="meta-vmware"
+			repo="meta-vmware"
+			revision="f8c7d45949ea4b8bd03c76d476979cb7e89b461d"
+			remote="github" />
+
+	</layer_declaration>
+
+	<local_conf>
+		<![CDATA[
+		MACHINE = "vmware"
+		DISTRO = "caros"
+		DL_DIR = "/REDO/download"
+		]]>
+	</local_conf>
+
+	<buildstage id="001-ubuntu">
+		<action>FROM ubuntu:14.04</action>
+		<action>RUN apt-get update</action>
+		<action>RUN apt-get install -y subversion gawk wget git-core diffstat unzip texinfo gcc-multilib build-essential chrpath libsdl1.2-dev vim sudo curl webfs</action>
+		<action>RUN mkdir /REDO</action>
+		<action>RUN mkdir /REDO/build</action>
+		<reposync />
+	</buildstage>
+
+	<buildstage id="002-build-core-image">
+		<prestage>001-ubuntu</prestage>
+		<reposync />
+		<action>RUN mkdir -p /REDO/download</action>
+		<bitbake_target>core-image-tplino</bitbake_target>
+	</buildstage>
+</redo>

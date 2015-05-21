@@ -43,6 +43,6 @@
 		<prestage>001-ubuntu</prestage>
 		<reposync />
 		<action>RUN mkdir -p /REDO/download</action>
-		<bitbake_target>core-image-tplino</bitbake_target>
+		<bitbake_target>core-image-caros</bitbake_target>
 	</buildstage>
 </redo>

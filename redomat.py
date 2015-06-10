@@ -27,6 +27,9 @@ OPTIONS
     -n, --dry-run
         do not build anything, just show what would be done
 
+    -F, --skip-failure-commit
+        do not commit a failed build stage
+
     -B, --new-build-id=BID
         set BID as build id (use with caution: id should be unique)
 
@@ -57,8 +60,10 @@ OPTIONS
 def main(argv):
     # evaluate passed flags
     try:
-        opts, args = getopt.getopt(argv,"hcniLl:e:t:b:B:U:",
-                ["help", "checkout", "dry-run", "images", "list=", "list-bids", "entry=", "target=", "match-build-id", "new-build-id=", "upgrade="])
+        opts, args = getopt.getopt(argv,"hcniFLl:e:t:b:B:U:",
+                ["help", "checkout", "dry-run", "images", "skip-failure-commit",
+                    "list=", "list-bids", "entry=", "target=", "match-build-id",
+                    "new-build-id=", "upgrade="])
     except getopt.GetoptError, e:
         print(e)
         print(usage())
@@ -79,6 +84,8 @@ def main(argv):
             sys.exit(0)
         elif opt in ['-c', '--checkout']:
             checkout_mode = True
+        elif opt in ['-F', '--skip-failure-commit']:
+            redo.set_commitfailures(False)
         elif opt in ['-n', '--dry-run']:
             redo.set_dryrun(True)
         elif opt in ['-B', '--new-build-id']:

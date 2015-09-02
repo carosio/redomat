@@ -3,12 +3,19 @@
 	<layer_declaration>
 
 		<remote baseurl="git://git.yoctoproject.org/" name="yocto" />
+		<remote baseurl="git://github.com/openembedded/" name="openembedded"/>
 		<remote baseurl="git://github.com/carosio/" name="github"/>
 
 		<baselayer
 			repo="poky"
 			revision="refs/tags/dizzy-12.0.1"
 			remote="yocto" />
+
+		<layer name="meta-openembedded"
+			repo="meta-openembedded"
+			revision="853dcfa0d618dc26bd27b3a1b49494b98d6eee97"
+			subdirs="meta-oe meta-networking meta-python"
+			remote="openembedded" />
 
 		<layer name="meta-caros"
 			repo="meta-caros"

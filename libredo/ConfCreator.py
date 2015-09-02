@@ -29,7 +29,11 @@ class ConfCreator:
         baselayer = self.declaration.baselayer['repo']
 
         for layername, layer in self.declaration.layers.iteritems():
-            extra_bblayer += " /REDO/source/%s/%s"%(baselayer,layer['name'])
+            if [] != layer['subdirs']:
+                for subdir in layer['subdirs']:
+                    extra_bblayer += " /REDO/source/%s/%s/%s"%(baselayer,layer['name'],subdir)
+            else:
+                extra_bblayer += " /REDO/source/%s/%s"%(baselayer,layer['name'])
 
         self.bblayers = """
 # LAYER_CONF_VERSION is increased each time build/conf/bblayers.conf

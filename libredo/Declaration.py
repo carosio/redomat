@@ -63,6 +63,11 @@ class Declaration:
                         if not repo_line.attrib.has_key(attribute):
                             raise DeclarationError("attribute [%s] missing in layer declaration"%attribute)
                         layer[attribute] = repo_line.attrib[attribute]
+                    if repo_line.attrib.has_key('subdirs'):
+                        layer['subdirs'] = repo_line.attrib['subdirs'].strip().split()
+                    else:
+                        layer['subdirs'] = []
+
                     new_layers[layer['name']] = layer
                     self.log(6, "added layer [%s]."%layer)
 

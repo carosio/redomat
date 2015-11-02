@@ -37,6 +37,7 @@ class Redomat:
         self.match_build_id = None
         self.upgrade_repo_tag = None
         self.dry_run = False
+        self.commit_failures = True
         self._entry_stage = None
         self.loglevel = logging.INFO
         self.logformat = '%(asctime)s %(levelname)s: %(message)s'
@@ -94,6 +95,13 @@ class Redomat:
             set_dryrun(False) - well... do it.
         """
         self.dry_run = dry
+
+    def set_commitfailures(self, cf):
+        """
+            set_commitfailures(True) - commit (and tag) a docker container after failure
+            set_commitfailures(False) - don't.
+        """
+        self.commit_failures = cf
 
     def setuser(self, _user):
         """
@@ -269,8 +277,9 @@ class Redomat:
 
         cid = self.container_id
         if not self.dry_run:
-            self.log(5, "end of stage actions. committing (%s): %s:%s"%(cid[:8], self.build_id, tag))
-            res = self.dc().commit(container=cid, repository=self.build_id, tag=tag)
+            if (failures == 0) or self.commit_failures:
+                self.log(5, "end of stage actions. committing (%s): %s:%s"%(cid[:8], self.build_id, tag))
+                res = self.dc().commit(container=cid, repository=self.build_id, tag=tag)
         else:
             self.log(5, "end of stage actions. (not) committing (%s): %s:%s"%(cid[:8], self.build_id, tag))
 

@@ -114,7 +114,11 @@ do
 
 	# determine candidate (same package from last build)
 	candidate=$( ls -1r $repo/$machine/${baseipk}*ipk | head -1 )
-	[ -z "$candidate" ] && continue
+	if [ -z "$candidate" ]
+	then
+		echo "TAKE ${ipk}" >> $TMP/manifest.txt
+		continue
+	fi
 
 	# calculate fingerprint for candidate package
 	env NO_CLEANUP="$subcleanup" ipkg-info.sh fingerprint $candidate > $TMP/${count}-${baseipk}-candidate.fp

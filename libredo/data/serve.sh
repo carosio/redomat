@@ -49,6 +49,7 @@ cd /REDO/build/tmp/deploy/images
 
 find /REDO/build/tmp/deploy/images -type l -name "core-image*.iso" -exec ln -s {} "$RESULTDIR/" ';'
 find /REDO/build/tmp/deploy/images -type l -name "core-image*.ova" -exec ln -s {} "$RESULTDIR/" ';'
+find /REDO/build/tmp/deploy/images -type l -name "core-image*-sdimg" -exec ln -s {} "$RESULTDIR/" ';'
 )
 
 (
@@ -72,4 +73,4 @@ echo
 find $RESULTDIR
 echo
 
-python /REDO/results/result_httpd.py 80 /REDO/results/$BUILDID /REDO/build/tmp/deploy/ipk
+python /REDO/results/result_httpd.py 80 "$RESULTDIR" /REDO/build/tmp/deploy/ipk

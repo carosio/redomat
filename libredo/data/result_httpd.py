@@ -49,9 +49,11 @@ class PackagesHTTPD(SimpleHTTPRequestHandler):
         except os.error:
             self.send_error(404, "No permission to list directory")
             return None
+        while path[-1] == '/':
+                path = path[:-1]
         if path == self.server.chroot:
-	    list.append("packages/")
-	    list.append("packages.tar")
+                list.append("packages/")
+                list.append("packages.tar")
 
         list.sort(lambda a, b: cmp(a.lower(), b.lower()))
         f = StringIO()

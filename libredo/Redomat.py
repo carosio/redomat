@@ -139,9 +139,20 @@ class Redomat:
         """
             return the image id for the given repo:tag
         """
-        for image in self.dc().images():
+        images = self.dc().images()
+        matches = []
+        for image in images:
+            if image['Id'].startswith(repo_tag):
+                matches.append(image['Id'])
+        for image in images:
             if repo_tag in image['RepoTags']:
-                return image['Id']
+                matches.append(image['Id'])
+        if len(matches) == 0:
+            raise Exception("get_image(\"%s\") did not match any image"%repo_tag)
+        elif len(matches) > 1:
+            self.log(3, "ambiguous image specification \"%s\". possible matches: %s"%(repo_tag, ",".join(matches)))
+            raise Exception("no unique match for get_image(\"%s\")"%repo_tag)
+        return matches[0]
 
     def resolve_stage_to_image(self, stage):
         """

@@ -180,7 +180,7 @@ do
 		echo "modified deps: $ipkg_fname"
 		control_list=`tar ft control.tar.gz | grep -v '^./$'`
 		rm -f ./control.tar.gz
-		tar cf ./control.tar.gz -C ./control_untar $control_list
+		tar czf ./control.tar.gz -C ./control_untar $control_list
 		ar Drf $target_ipkg_fname ./control.tar.gz
 	else
 		echo "unmodified: $ipkg_fname"

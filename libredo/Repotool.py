@@ -74,6 +74,8 @@ class Repotool:
             assert(layername == layer['name'])
             git_dir = "/".join((checkout_dir, baselayer['repo'], layer["name"]))
             remote = self._declaration.layer_remotes.get(layer['remote'])
+            if not remote:
+                raise Exception("layer %s has no remote."%layer["name"])
             repo = layer['repo']
             revision = layer['revision']
             git_url = "".join([remote['baseurl'], repo])

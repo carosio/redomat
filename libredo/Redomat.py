@@ -3,6 +3,7 @@ from libredo import Repotool
 from libredo.ConfCreator import ConfCreator
 import xml.etree.ElementTree as XML
 from multiprocessing import Process
+import re
 
 class BuildException(Exception):
     pass
@@ -133,7 +134,8 @@ class Redomat:
             be unique. Redomat will generate a suitable build-id
             if this function is not used.
         """
-        self.build_id = _buildid
+
+        self.build_id = re.sub('[^a-zA-Z0-9_.-]', '', _buildid)
 
     def get_image(self, repo_tag):
         """

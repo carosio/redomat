@@ -36,8 +36,9 @@ OPTIONS
     -b, --match-build-id=BID
         use BID for matching/selecting images
 
-    -U, --upgrade=repo:tag
-        use repo:tag as base image for upgrade
+    -U, --upgrade=IMGSPEC
+        Use specified image IMGSPEC as base image for upgrade.
+        repo:tag notation and image-id notation is accepted.
         On default, only build last stage. Use -e if required.
 
     -f, --foreign

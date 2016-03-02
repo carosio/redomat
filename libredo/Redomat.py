@@ -359,11 +359,15 @@ class Redomat:
         #
         # start building the stages
         #
-        while build_chain:
-            stage, pre_image = build_chain.pop()
+        try:
+            while build_chain:
+                stage, pre_image = build_chain.pop()
 
-            self.build_stage(stage, pre_image)
-        self.dc().better_execute(self.container_id, 'touch /REDO/container-terminated')
+                if not self.build_stage(stage, pre_image):
+                    return False
+        finally:
+            self.dc().better_execute(self.container_id, 'touch /REDO/container-terminated')
+        return True
 
     def _current_image(self):
         return "%s:%s"%(self.build_id, self.current_stage)

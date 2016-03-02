@@ -145,8 +145,8 @@ def main(argv):
             else:
                 print(decl.stages())
             sys.exit(1)
-    redo.build(target_stage)
-    print "build completed."
+    res = redo.build(target_stage)
+    print "build completed (%s)."%{True:"successfully", False:"and failed"}[res]
     sys.exit(0)
 
 

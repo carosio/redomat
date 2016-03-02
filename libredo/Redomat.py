@@ -343,7 +343,7 @@ class Redomat:
         self.file_send(self.build_id, "/REDO/source/BUILDID")
 
         # add serve.sh
-	self.RUN("mkdir -p /REDO/results")
+        self.RUN("mkdir -p /REDO/results")
         serve_script = open(os.path.join(os.path.split(__file__)[0], "data/serve.sh"))
         self.file_send(serve_script.read(), "/REDO/results/serve.sh", "unlink,mode=0755")
         self.RUN("chmod +x /REDO/results/serve.sh")

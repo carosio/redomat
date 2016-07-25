@@ -18,10 +18,17 @@
 	</local_conf>
 
 	<buildstage id="002-hello-world">
-		<prestage>001-ubuntu</prestage>
-		<action>WORKDIR /REDO/source</action>
-		<action>ADD hello-world.txt /REDO/source/hello-world.txt</action>
-		<action>RUN cp -v hello-world.txt foobar.txt</action>
+		<prestage>001-busybox</prestage>
+		<action>ADD hello-world.txt /REDO/hello-world.txt</action>
+		<action>RUN cp -v /REDO/hello-world.txt /REDO/foobar.txt</action>
+		<action>RUN echo "002-hello-world stage done!"</action>
+	</buildstage>
+
+	<buildstage id="003-hello-finish">
+		<prestage>002-hello-world</prestage>
+		<action>RUN cp -rv /REDO /REDO-copy</action>
+		<action>RUN tar cvf /REDO/copy.tar /REDO-copy</action>
+		<action>RUN echo "hello finish done!"</action>
 	</buildstage>
 
 </redo>

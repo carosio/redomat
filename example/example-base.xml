@@ -12,14 +12,10 @@
 
 	</layer_declaration>
 
-	<buildstage id="001-ubuntu">
-		<action>FROM ubuntu:14.04</action>
-		<action>RUN apt-get update</action>
-		<action>RUN apt-get install -y gawk wget git-core diffstat unzip texinfo gcc-multilib build-essential chrpath libsdl1.2-dev vim sudo curl webfs socat</action>
-		<action>RUN mkdir /REDO</action>
-		<action>RUN mkdir /REDO/build</action>
-		<action>RUN mkdir /REDO/source</action>
-        <reposync />
+	<buildstage id="001-busybox">
+		<action>FROM busybox:latest</action>
+		<action>RUN mkdir -p /REDO/build</action>
+		<action>RUN echo "001-busybox stage done!"</action>
 	</buildstage>
 
 </redo>

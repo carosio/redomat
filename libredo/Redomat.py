@@ -520,13 +520,16 @@ class Redomat:
 
         # support relative paths
         if source[0] != '/':
-            source = self.decl.stage(self.current_stage)["basepath"] + "/" + self.current_stage + "/" + source
+            resolved_source = self.decl.stage(self.current_stage)["basepath"] + "/" + self.current_stage + "/" + source
+
+            if not os.path.exists(resolved_source):
+                resolved_source = self.decl.stage(self.current_stage)["basepath"] + "/" + source
 
         # check if the file exists
-        if not os.path.exists(source):
-            raise Exception("ADD: specified source file does not exist: %s"%source)
+        if not os.path.exists(resolved_source):
+            raise Exception("ADD: specified source file [%s] does not exist: %s"%(source,resolved_source))
 
-        f = open(source, 'r')
+        f = open(resolved_source, 'r')
         rc = self.file_send(f.read(), target)
         self.log(6, 'ADD: %s.'%{True: "succeeded", False: "failed"}[rc])
         f.close()

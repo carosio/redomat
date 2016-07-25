@@ -26,9 +26,6 @@ class Redomat:
 
         self.container_id = None
 
-        # counter for container so the IDs don't collide
-        self.run_sequence = 0
-
         # flag for image search-operation and selection
         # (allow other user's images as candidates)
         self.include_foreigns = False
@@ -46,7 +43,7 @@ class Redomat:
 
         self.username = getpass.getuser()
 
-        self.allowed_commands = set(['CREATE_BBLAYERS','CREATE_LOCAL_CONF','REPOSYNC', 'FROM', 'RUN', 'ADD', 'WORKDIR', 'ENTRYPOINT'])
+        self.allowed_commands = set(['CREATE_BBLAYERS','CREATE_LOCAL_CONF','REPOSYNC', 'FROM', 'RUN', 'ADD'])
 
     def dc(self):
         "return docker client instance (imports docker module)"
@@ -534,49 +531,5 @@ class Redomat:
         self.log(6, 'ADD: %s.'%{True: "succeeded", False: "failed"}[rc])
         f.close()
         return rc
-
-    def WORKDIR(self, directory):
-        """
-            set a WORKDIR for an image
-        """
-        # set name for the current container being processed
-        name = "%s-%s-%s"%(self.build_id, self.current_stage, self._seq())
-
-        # create the container
-        container = self.dc().create_container(image=self._current_image(), name=name, working_dir=directory)
-        container_id = container.get('Id') or container.get('id')
-        self.log(6, "new container started [%s] from [%s]"%(container_id, self._current_image()))
-
-        # commit when the container exited with a non zero exit code
-        if self.dc().wait(container=name) is not 0:
-            # raise Exception if the command exited with a non zero code
-            raise BuildException("Container " + name + " exited with a non zero exit status")
-
-        tag = "%s-%s"%(self.current_stage, self._nextseq())
-        self.dc().commit(container=name, repository=self.build_id, tag=tag)
-        self.log(6, "container [%s] committed -> [%s]"%(container_id, "%s:%s"%(self.build_id,tag)))
-        return True
-
-    def ENTRYPOINT(self, cmd):
-        """
-            set entry point of image
-        """
-        # set the name of the container being processed
-        name = "%s-%s-%s"%(self.build_id, self.current_stage, self._seq())
-
-        # create the container
-        container = self.dc().create_container(image=self._current_image(), name=name, command=cmd)
-        container_id = container.get('Id') or container.get('id')
-        self.log(6, "new container started [%s] from [%s]"%(container_id, self._current_image()))
-
-        # commit when the container exited with a non zero exit code
-        if self.dc().wait(container=name) is not 0:
-            # raise Exception if the command exited with a non zero code
-            raise BuildException("Container " + name + " exited with a non zero exit status")
-
-        tag = "%s-%s"%(self.current_stage, self._nextseq())
-        self.dc().commit(container=name, repository=self.build_id, tag=tag)
-        self.log(6, "container [%s] committed -> [%s]"%(container_id, "%s:%s"%(self.build_id,tag)))
-        return True
 
 # vim:expandtab:ts=4

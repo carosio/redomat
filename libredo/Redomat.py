@@ -330,7 +330,7 @@ class Redomat:
 
         # create container with some bogus loop, this will change to some httpd
         res = self.dc().create_container(image=pre_image, name=self.build_id,
-                command="/bin/bash -c 'while [ ! -e /REDO/container-terminated ] ; do sleep 1 ;date; done'")
+                command="/bin/sh -c 'while [ ! -e /REDO/container-terminated ] ; do sleep 1 ;date; done'")
         self.container_id = res['Id']
         self.dc().start(container=self.container_id, privileged=True)
 
@@ -468,8 +468,8 @@ class Redomat:
         self.repotool.set_declaration(self.decl)
         cmds = self.repotool.checkout_all("/REDO/source")
         for cmd in cmds:
-            self.log(6, "RUN /bin/bash -c \"%s\""%cmd)
-            if not self.RUN("/bin/bash -c \"%s\""%cmd):
+            self.log(6, "RUN /bin/sh -c \"%s\""%cmd)
+            if not self.RUN("/bin/sh -c \"%s\""%cmd):
                 return False
         return True
 

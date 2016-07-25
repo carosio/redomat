@@ -33,7 +33,7 @@ class Redomat:
         # some options, see accessor function for details
         self.build_id = None
         self.match_build_id = None
-        self.upgrade_repo_tag = None
+        self.entry_image = None
         self.dry_run = False
         self.commit_failures = True
         self._entry_stage = None
@@ -117,12 +117,12 @@ class Redomat:
         """
         self.match_build_id = _buildid
 
-    def set_upgrade_repo_tag(self, _repoTag):
+    def set_entry_image(self, _repoTag):
         """
-            set repo:tag to be used as base image
-            for upgrade
+            set image to be used as starting point
+            can be specified as repo:tag or image_id
         """
-        self.upgrade_repo_tag = _repoTag
+        self.entry_image = _repoTag
 
     def set_build_id(self, _buildid):
         """
@@ -184,6 +184,10 @@ class Redomat:
         chain = []
         sid = target
 
+        if self.entry_image and not self._entry_stage:
+            # -U without -e --> default to last declared stage
+            self._entry_stage = target
+
         self.log(7, "generating build-chain")
         while True:
             stage = self.decl.stage(sid)
@@ -191,10 +195,10 @@ class Redomat:
 
             prestage = stage.get("prestage")
 
-            if self.upgrade_repo_tag:
-                if (not self._entry_stage) or self._entry_stage == prestage:
-                    self.log(6, "using %s as base for upgrade"%(self.upgrade_repo_tag))
-                    chain.append((sid, self.get_image(self.upgrade_repo_tag)))
+            if self.entry_image:
+                if stage.get("id") == self._entry_stage:
+                    self.log(6, "entry stage matched. the chain ends/starts here.")
+                    chain.append((self._entry_stage, self.get_image(self.entry_image)))
                     break
 
             if prestage:
@@ -237,10 +241,11 @@ class Redomat:
                         self.log(7, "successfully pulled %s:%s"%(image, tag))
                 chain.append((sid, fromline.split(" ")[1].strip()))
                 break
-            if stage == self._entry_stage:
-                self.log(7, "entry stage matched")
-                break
         self.log(6, "build-chain: %s"%chain)
+
+        if self.entry_image and self._entry_stage:
+            if not chain[-1][0] == self._entry_stage:
+                raise BuildException("entry stage [%s] not matched."%self._entry_stage)
         return chain
 
     def build_stage(self, stage, pre_image):
@@ -478,8 +483,15 @@ class Redomat:
             Unlike other actions this line is not parsed in this place
             but during build-chain generation, hence it is a mistake
             if this code is reached.
+            Unless...
+            ...the very first stage is selected as the entry-stage (-e)
+            on the command line. Then it just needs to be ignored.
         """
-        assert(False)
+        if self._entry_stage:
+            self.log(6, "ignoring FROM declaration.")
+            return True
+        else:
+            assert(False)
 
 
     def RUN(self, cmd):

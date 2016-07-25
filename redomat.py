@@ -37,15 +37,19 @@ OPTIONS
         use BID for matching/selecting images
 
     -U, --upgrade=IMGSPEC
-        Use specified image IMGSPEC as base image for upgrade.
+        Use specified image IMGSPEC as the "entry-image". The
+        first stage (possibly specified by -e) will be executed
+        in a container created from this image.
         repo:tag notation and image-id notation is accepted.
-        On default, only build last stage. Use -e if required.
+        The default (without -e) is to execute the last stage
+        from the declaration in the specified image.
 
     -f, --foreign
         use stage images from other users
 
     -e, --entry=STAGE
-        start building from STAGE
+        Use specified stage (as named in the declaration) as the first
+        stage to be executed.
 
     -t, --target=STAGE
         build up to STAGE
@@ -94,7 +98,7 @@ def main(argv):
         elif opt in ['-b', '--match-build-id']:
             redo.set_match_build_id(arg)
         elif opt in ['-U', '--upgrade']:
-            redo.set_upgrade_repo_tag(arg)
+            redo.set_entry_image(arg)
         elif opt in ['-f', '--foreign']:
             # this will allow redomat to select matching stage-images
             # from other users too

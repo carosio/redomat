@@ -14,7 +14,7 @@ class Declaration:
         self.layers = {}
         self.baselayer = None
         self.layer_remotes = {}
-        self.extra_local_conf = ""
+        self._extra_local_conf = [""]
 
         self.loglevel = logging.INFO
         self.logformat = '%(asctime)s %(levelname)s: %(message)s'
@@ -35,6 +35,12 @@ class Declaration:
         elif severity >= 7:
             logging.debug(message)
 
+    def extra_local_conf(self):
+        return "\n".join(self._extra_local_conf + [""])
+
+    def append_local_conf(self, fragment):
+        self._extra_local_conf.append(fragment)
+
     def parse(self, xml_file):
         """
             parse redomat declaration (xml) and add layers and stages to this instance
@@ -46,8 +52,8 @@ class Declaration:
 
         # parse extras for local.conf
         for local_conf in manifest_root.findall("local_conf"):
-            self.extra_local_conf += local_conf.text
-            self.log(6, "added extra_local_conf [%s]."%self.extra_local_conf)
+            self.append_local_conf(local_conf.text)
+            self.log(6, "added extra_local_conf [%s]."%local_conf.text)
 
         # parse layer declaration
         new_layers = {}

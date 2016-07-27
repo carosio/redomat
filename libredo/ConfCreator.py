@@ -68,4 +68,4 @@ BB_DISKMON_DIRS = "\
     ABORT,${SSTATE_DIR},100M,1K"
 CONF_VERSION = "1"
 %s
-        """%self.declaration.extra_local_conf
+        """%self.declaration.extra_local_conf()

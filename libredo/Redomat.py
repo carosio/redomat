@@ -30,6 +30,7 @@ class Redomat:
         # (allow other user's images as candidates)
         self.include_foreigns = False
 
+        self.command_line_extra_local_conf = []
         # some options, see accessor function for details
         self.build_id = None
         self.match_build_id = None
@@ -59,6 +60,19 @@ class Redomat:
     def set_entry_stage(self, s):
         self._entry_stage = s
 
+    def append_local_conf(self, local_conf_line):
+        """
+        append more lines to the local.conf
+        this is in addition to local.conf-contents
+        declared in the xml files.
+        """
+
+        if self.decl:
+            self.decl.append_local_conf(local_conf_line)
+        else:
+            # this will be added to the decl in set_decl()
+            self.command_line_extra_local_conf.append(local_conf_line)
+
     def log(self, severity, message):
         m = ['[']
         if self.build_id:
@@ -86,6 +100,11 @@ class Redomat:
             set the build declaration to be used for the next build
         """
         self.decl = _decl
+
+        # command-line-extra-local-conf contents might
+        # exist already. (can be added before parsing)
+        while len(self.command_line_extra_local_conf) > 0:
+            self.decl.append_local_conf(self.command_line_extra_local_conf.pop(0))
 
     def set_dryrun(self, dry):
         """

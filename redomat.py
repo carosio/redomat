@@ -60,15 +60,18 @@ OPTIONS
     -L, --list-bids
         list all BUILD-IDs
 
+    -a, --append-local-conf
+        append a line to generated local.conf
+
 """
 
 def main(argv):
     # evaluate passed flags
     try:
-        opts, args = getopt.getopt(argv,"hcniFLl:e:t:b:B:U:",
+        opts, args = getopt.getopt(argv,"hcniFLl:e:t:b:B:U:a:",
                 ["help", "checkout", "dry-run", "images", "skip-failure-commit",
                     "list=", "list-bids", "entry=", "target=", "match-build-id",
-                    "new-build-id=", "upgrade="])
+                    "new-build-id=", "upgrade=", "append-local-conf="])
     except getopt.GetoptError, e:
         print(e)
         print(usage())
@@ -117,6 +120,8 @@ def main(argv):
             # print all build IDs
             redo.list_all_buildID()
             sys.exit(0)
+        elif opt in ['-a', '--append-local-conf']:
+            redo.append_local_conf(arg)
 
     # parse declaration(s)
     decl = Declaration()

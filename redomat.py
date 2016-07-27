@@ -63,6 +63,9 @@ OPTIONS
     -a, --append-local-conf
         append a line to generated local.conf
 
+    --success-tag=TAG
+        Tag a successful build with TAG using <repo>:<tag> notation.
+
 """
 
 def main(argv):
@@ -71,7 +74,7 @@ def main(argv):
         opts, args = getopt.getopt(argv,"hcniFLl:e:t:b:B:U:a:",
                 ["help", "checkout", "dry-run", "images", "skip-failure-commit",
                     "list=", "list-bids", "entry=", "target=", "match-build-id",
-                    "new-build-id=", "upgrade=", "append-local-conf="])
+                    "new-build-id=", "upgrade=", "append-local-conf=", "success-tag="])
     except getopt.GetoptError, e:
         print(e)
         print(usage())
@@ -94,6 +97,8 @@ def main(argv):
             checkout_mode = True
         elif opt in ['-F', '--skip-failure-commit']:
             redo.set_commitfailures(False)
+        elif opt in ['--success-tag']:
+            redo.set_success_tag(arg)
         elif opt in ['-n', '--dry-run']:
             redo.set_dryrun(True)
         elif opt in ['-B', '--new-build-id']:

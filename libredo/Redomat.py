@@ -75,26 +75,29 @@ class Redomat:
             self.command_line_extra_local_conf.append(local_conf_line)
 
     def log(self, severity, message):
-        m = ['[']
+        m = [u'[']
         if self.build_id:
-            m.append("%s"%self.build_id)
+            m.append(u"%s"%self.build_id)
         if self.current_stage:
-            m.append("%s"%self.current_stage)
+            m.append(u"%s"%self.current_stage)
         if self.container_id:
-            m.append("%s"%(self.container_id[:8]))
-        m.append(']')
-        m.append(message)
+            m.append(u"%s"%(self.container_id[:8]))
+        m.append(u']')
+        if type(message) == unicode:
+            m.append(message)
+        else:
+            m.append(unicode(message, 'utf8', 'ignore'))
 
         if severity <= 2:
-            logging.critical(" ".join(m))
+            logging.critical(u" ".join(m))
         elif severity == 3:
-            logging.error(" ".join(m))
+            logging.error(u" ".join(m))
         elif severity == 4:
-            logging.warning(" ".join(m))
+            logging.warning(u" ".join(m))
         elif ( 4 < severity <= 6):
-            logging.info(" ".join(m))
+            logging.info(u" ".join(m))
         elif severity >= 7:
-            logging.debug(" ".join(m))
+            logging.debug(u" ".join(m))
 
     def set_decl(self, _decl):
         """

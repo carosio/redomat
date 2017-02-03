@@ -578,6 +578,8 @@ class Redomat:
 
             if not os.path.exists(resolved_source):
                 resolved_source = self.decl.stage(self.current_stage)["basepath"] + "/" + source
+        else:
+            resolved_source = source
 
         # check if the file exists
         if not os.path.exists(resolved_source):
